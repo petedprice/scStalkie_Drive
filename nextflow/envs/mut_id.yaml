@@ -1,0 +1,9 @@
+name: mut_id
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - samtools
+  - bcftools
+  - java

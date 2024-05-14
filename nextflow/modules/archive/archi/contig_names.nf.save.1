@@ -1,0 +1,18 @@
+process contig_names {
+    input:
+    tuple val(species), val(ref)
+
+    output:
+    output val(species), file("*.txt")
+
+    script:
+    """
+    #!/bin/bash
+    mkdir contigs
+    cat $params.fasta_dir/$ref.fna | grep '>' | cut -d ' ' -f1 | cut -c2- | grep NC* > contigs.txt
+    for contig in \$(grep NC contigs.txt)
+    do
+    echo \$contig > \${contig}_${species}.txt
+    done
+    """
+}

@@ -1,0 +1,139 @@
+Jan-22 15:10:48.105 [main] DEBUG nextflow.cli.Launcher - $> nextflow run /users/bop20pp/personal_git/MeioticDrive2022/nextflow/main.nf --fasta_dir /mnt/parscratch/users/bop20pp/Drive/ref_genome/OMAstalkie/ --gtf_dir /mnt/parscratch/users/bop20pp/Drive/ref_genome/OMAstalkie/ --cellranger /users/bop20pp/software/cellranger-7.2.0/bin/cellranger --metadata /users/bop20pp/personal_git/MeioticDrive2022/nextflow/metadata_mt.csv --read_dir /mnt/parscratch/users/bop20pp/Drive/reads --cellcycle_markers /users/bop20pp/personal_git/MeioticDrive2022/nextflow/data/cell_cycle_markers.csv --celltype_markers /users/bop20pp/personal_git/MeioticDrive2022/nextflow/data/markers_elife_plus_extras.csv -resume -with-dag flowchat.png -with-trace
+Jan-22 15:10:48.147 [main] INFO  nextflow.cli.CmdRun - N E X T F L O W  ~  version 22.04.0
+Jan-22 15:10:48.161 [main] DEBUG nextflow.config.ConfigBuilder - Found config local: /users/bop20pp/personal_git/MeioticDrive2022/nextflow/nextflow.config
+Jan-22 15:10:48.162 [main] DEBUG nextflow.config.ConfigBuilder - Parsing config file: /users/bop20pp/personal_git/MeioticDrive2022/nextflow/nextflow.config
+Jan-22 15:10:48.178 [main] DEBUG nextflow.config.ConfigBuilder - Applying config profile: `standard`
+Jan-22 15:10:48.678 [main] WARN  nextflow.config.ConfigBuilder - It appears you have never run this project before -- Option `-resume` is ignored
+Jan-22 15:10:48.717 [main] INFO  nextflow.cli.CmdRun - Launching `/users/bop20pp/personal_git/MeioticDrive2022/nextflow/main.nf` [backstabbing_payne] DSL2 - revision: 116298bccf
+Jan-22 15:10:48.729 [main] DEBUG nextflow.plugin.PluginsFacade - Setting up plugin manager > mode=prod; plugins-dir=/users/bop20pp/.nextflow/plugins; core-plugins: nf-amazon@1.7.1,nf-azure@0.13.1,nf-console@1.0.3,nf-ga4gh@1.0.3,nf-google@1.1.4,nf-sqldb@0.4.0,nf-tower@1.4.0
+Jan-22 15:10:48.730 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins default=[]
+Jan-22 15:10:48.741 [main] INFO  org.pf4j.DefaultPluginStatusProvider - Enabled plugins: []
+Jan-22 15:10:48.741 [main] INFO  org.pf4j.DefaultPluginStatusProvider - Disabled plugins: []
+Jan-22 15:10:48.744 [main] INFO  org.pf4j.DefaultPluginManager - PF4J version 3.4.1 in 'deployment' mode
+Jan-22 15:10:48.751 [main] INFO  org.pf4j.AbstractPluginManager - No plugins
+Jan-22 15:10:48.789 [main] DEBUG nextflow.Session - Session uuid: 34faad23-41ea-4159-b2b6-d08c49158cdf
+Jan-22 15:10:48.789 [main] DEBUG nextflow.Session - Run name: backstabbing_payne
+Jan-22 15:10:48.790 [main] DEBUG nextflow.Session - Executor pool size: 64
+Jan-22 15:10:48.838 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 22.04.0 build 5697
+  Created: 23-04-2022 18:00 UTC (19:00 BST)
+  System: Linux 3.10.0-1160.105.1.el7.x86_64
+  Runtime: Groovy 3.0.10 on OpenJDK 64-Bit Server VM 11.0.16+8
+  Encoding: UTF-8 (UTF-8)
+  Process: 63004@login1.pri.stanage.alces.network [10.10.7.1]
+  CPUs: 64 - Mem: 1007.2 GB (93.4 GB) - Swap: 7.9 GB (7.9 GB)
+Jan-22 15:10:48.877 [main] DEBUG nextflow.Session - Work-dir: /users/bop20pp/personal_git/MeioticDrive2022/nextflow/work [nfs]
+Jan-22 15:10:48.878 [main] DEBUG nextflow.Session - Script base path does not exist or is not a directory: /users/bop20pp/personal_git/MeioticDrive2022/nextflow/bin
+Jan-22 15:10:48.886 [main] DEBUG nextflow.executor.ExecutorFactory - Extension executors providers=[]
+Jan-22 15:10:48.896 [main] DEBUG nextflow.Session - Observer factory: DefaultObserverFactory
+Jan-22 15:10:48.926 [main] DEBUG nextflow.cache.CacheFactory - Using Nextflow cache factory: nextflow.cache.DefaultCacheFactory
+Jan-22 15:10:48.936 [main] DEBUG nextflow.util.CustomThreadPool - Creating default thread pool > poolSize: 65; maxThreads: 1000
+Jan-22 15:10:49.013 [main] DEBUG nextflow.Session - Session start invoked
+Jan-22 15:10:49.016 [main] DEBUG nextflow.trace.TraceFileObserver - Flow starting -- trace file: /users/bop20pp/personal_git/MeioticDrive2022/nextflow/trace.txt
+Jan-22 15:10:49.279 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Jan-22 15:10:49.987 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:49.987 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:49.994 [main] DEBUG nextflow.executor.Executor - [warm up] executor > slurm
+Jan-22 15:10:49.999 [main] DEBUG n.processor.TaskPollingMonitor - Creating task monitor for executor 'slurm' > capacity: 100; pollInterval: 5s; dumpInterval: 5m 
+Jan-22 15:10:50.002 [main] DEBUG n.executor.AbstractGridExecutor - Creating executor 'slurm' > queue-stat-interval: 1m
+Jan-22 15:10:50.067 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:50.067 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:50.077 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withLabel:seurat` matches labels `seurat` for process with name seurat_filter
+Jan-22 15:10:50.078 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:50.078 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:50.081 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withLabel:seurat` matches labels `seurat` for process with name seurat_doublet
+Jan-22 15:10:50.082 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:50.082 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:50.088 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withLabel:seurat` matches labels `seurat` for process with name seurat_SCT_integrate
+Jan-22 15:10:50.089 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:50.089 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:50.092 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withLabel:seurat` matches labels `seurat` for process with name seurat_markers
+Jan-22 15:10:50.092 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:50.092 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:50.096 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:50.096 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:50.106 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withLabel:samtoolsetc` matches labels `samtoolsetc` for process with name split_bam
+Jan-22 15:10:50.106 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:50.106 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:50.114 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withLabel:samtoolsetc` matches labels `samtoolsetc` for process with name sc_var_call
+Jan-22 15:10:50.114 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:50.114 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:50.118 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withLabel:tidyverse` matches labels `tidyverse` for process with name R_var_filtering
+Jan-22 15:10:50.119 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:50.119 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:50.121 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withLabel:java` matches labels `java` for process with name ws_var_call
+Jan-22 15:10:50.121 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: slurm
+Jan-22 15:10:50.121 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'slurm'
+Jan-22 15:10:50.125 [main] DEBUG nextflow.Session - Workflow process names [dsl2]: sc_var_call, cellranger_count, seurat_SCT_integrate_noX, seurat_filter, ws_var_call, alevin_fry_index, cellranger_mkref, alevin_fry_quant, split_bam, seurat_markers_noX, seurat_SCT_integrate, seurat_markers, contig_names, seurat_doublet, R_var_filtering
+Jan-22 15:10:50.125 [main] DEBUG nextflow.Session - Ignite dataflow network (14)
+Jan-22 15:10:50.130 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > cellranger_mkref
+Jan-22 15:10:50.130 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > cellranger_count
+Jan-22 15:10:50.131 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > seurat_filter
+Jan-22 15:10:50.132 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > seurat_doublet
+Jan-22 15:10:50.134 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > seurat_SCT_integrate
+Jan-22 15:10:50.134 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > seurat_markers
+Jan-22 15:10:50.135 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > contig_names
+Jan-22 15:10:50.136 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > split_bam
+Jan-22 15:10:50.136 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > sc_var_call
+Jan-22 15:10:50.136 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > R_var_filtering
+Jan-22 15:10:50.137 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > ws_var_call
+Jan-22 15:10:50.137 [main] DEBUG nextflow.script.ScriptRunner - > Await termination 
+Jan-22 15:10:50.137 [main] DEBUG nextflow.Session - Session await
+Jan-22 15:10:50.336 [Task submitter] DEBUG nextflow.executor.GridTaskHandler - [SLURM] submitted process contig_names (1) > jobId: 1233529; workDir: /users/bop20pp/personal_git/MeioticDrive2022/nextflow/work/b9/25826ca9e67b8d55cbb4280e2cff4c
+Jan-22 15:10:50.337 [Task submitter] INFO  nextflow.Session - [b9/25826c] Submitted process > contig_names (1)
+Jan-22 15:10:50.361 [Task submitter] DEBUG nextflow.executor.GridTaskHandler - [SLURM] submitted process cellranger_mkref (1) > jobId: 1233530; workDir: /users/bop20pp/personal_git/MeioticDrive2022/nextflow/work/88/bd23563a52ceb2a6d11d3775072983
+Jan-22 15:10:50.361 [Task submitter] INFO  nextflow.Session - [88/bd2356] Submitted process > cellranger_mkref (1)
+Jan-22 15:10:57.042 [SIGINT handler] DEBUG nextflow.Session - Session aborted -- Cause: SIGINT
+Jan-22 15:10:57.053 [SIGINT handler] DEBUG nextflow.Session - The following nodes are still active:
+[process] cellranger_count
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] seurat_filter
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] seurat_doublet
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] seurat_SCT_integrate
+  status=ACTIVE
+  port 0: (value) OPEN  ; channel: doublet_seurat.RData
+  port 1: (cntrl) -     ; channel: $
+
+[process] seurat_markers
+  status=ACTIVE
+  port 0: (value) OPEN  ; channel: integrated_seurat.RData
+  port 1: (cntrl) -     ; channel: $
+
+[process] split_bam
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] sc_var_call
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] R_var_filtering
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+[process] ws_var_call
+  status=ACTIVE
+  port 0: (queue) OPEN  ; channel: -
+  port 1: (cntrl) -     ; channel: $
+
+Jan-22 15:10:57.054 [main] DEBUG nextflow.Session - Session await > all process finished
+Jan-22 15:10:57.056 [main] DEBUG nextflow.Session - Session await > all barriers passed
+Jan-22 15:10:57.063 [main] WARN  n.processor.TaskPollingMonitor - Killing running tasks (2)
+Jan-22 15:10:57.079 [main] DEBUG nextflow.trace.WorkflowStatsObserver - Workflow completed > WorkflowStats[succeededCount=0; failedCount=0; ignoredCount=0; cachedCount=0; pendingCount=0; submittedCount=2; runningCount=-2; retriesCount=0; abortedCount=2; succeedDuration=0ms; failedDuration=0ms; cachedDuration=0ms;loadCpus=-17; loadMemory=0; peakRunning=0; peakCpus=0; peakMemory=0; ]
+Jan-22 15:10:57.079 [main] DEBUG nextflow.trace.TraceFileObserver - Flow completing -- flushing trace file
+Jan-22 15:10:57.183 [main] DEBUG nextflow.cache.CacheDB - Closing CacheDB done
+Jan-22 15:10:57.196 [main] DEBUG nextflow.script.ScriptRunner - > Execution complete -- Goodbye

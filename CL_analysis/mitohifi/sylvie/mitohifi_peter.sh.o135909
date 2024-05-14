@@ -1,0 +1,23 @@
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/condabin/conda
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/bin/conda
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/bin/conda-env
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/bin/activate
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/bin/deactivate
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/etc/profile.d/conda.sh
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/etc/fish/conf.d/conda.fish
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/shell/condabin/Conda.psm1
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/shell/condabin/conda-hook.ps1
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/lib/python3.10/site-packages/xontrib/conda.xsh
+no change     /usr/local/extras/Genomics/apps/anaconda_python/envs/mamba/etc/profile.d/conda.csh
+no change     /home/bop20pp/.bashrc
+No action taken.
+
+  Your account is set up to use the Genomics Software Repository
+  To see a list of installed software type the command: softrepo
+
+2023-01-24 12:47:30 [INFO] Welcome to MitoHifi v2. Starting pipeline...
+2023-01-24 12:47:30 [INFO] Length of related mitogenome is: 16128 bp
+2023-01-24 12:47:30 [INFO] Number of genes on related mitogenome: 37
+2023-01-24 12:47:30 [INFO] Running MitoHifi pipeline in reads mode...
+2023-01-24 12:47:30 [INFO] 1. First we map your Pacbio HiFi reads to the close-related mitogenome
+2023-01-24 12:47:30 [INFO] minimap2 -t 1 --secondary=no -ax map-pb /fastdata/bop20pp/mitohifi/genome_files/NC_059897.1.fasta /fastdata/bop20pp/mitohifi/merged.fasta.gz | samtools view -@ 1 -S -b -F4 -F 0x800 > reads.HiFiMapped.bam
