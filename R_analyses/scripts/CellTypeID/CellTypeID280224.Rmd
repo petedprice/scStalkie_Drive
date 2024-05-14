@@ -1,0 +1,343 @@
+---
+title: "ParaOrtho_allign_phy"
+author: "PP"
+date: "2024-02-03"
+output: html_document
+---
+Summary of file:
+This markdown reads in a list of markers from all the different sources
+For each gene, it first asks whether I have already analysed it. If so we can skip and move to next
+If not, I will get information on 
+a) the OMA drosophila ortholog 
+b) the orthogroup members from the N0.tsv orthofinder file (saved in data/N0.tsv)
+
+I will then perform the usual 
+a) Get the protein sequences for all the members of the orthogroup/OMA result 
+b) Align the sequences using MAFFT and build trees using FastTree
+c) BLAST the sequences using blastp 
+
+Output data to newfolder (called missing_genes/gene_x)
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+DATA READING
+
+``` {r}
+
+library(tidyverse)
+library(ape)
+library(ggtree)
+library(ggplot2)
+library(Seurat)
+
+## GETTING THE KNOWN MARKERS AND MARKERS TO DO ----
+ortholog_table <- read.csv("../../outdata/orthologs_Jan24.csv")
+orthofinder_results <- read.table("data/N0_orthofinder.tsv", sep = '\t', header = T)
+Complete_Markers <- readxl::read_excel("data/T.dal_Testis_Marker_Genes280224.xlsx", 
+                                     sheet = 1)[,1:7]
+All_markers <- readxl::read_excel("data/T.dal_Testis_Marker_Genes280224.xlsx", 
+                                     sheet =4)
+
+syn_db_whole <- read.table("../../indata/ref_files/fb_synonym_fb_2023_06.tsv", sep = '\t', fill = T, quote = "")
+colnames(syn_db_whole) <- c("primary_FBid",  "organism_abbreviation",   "current_symbol",  "current_fullname",  
+              "fullname_synonym",     "symbol_synonym")
+
+syn_db <- filter(syn_db_whole, organism_abbreviation == "Dmel") %>% 
+  filter(!grepl("-RA", current_symbol)) %>% 
+  filter(!grepl("-RB", current_symbol)) %>%
+  filter(!grepl("\\[.*\\]", current_symbol)) %>% 
+  filter(current_symbol != "") 
+
+unique_marker_genes <-  All_markers[,-1] %>% 
+  c() %>% unlist() %>% unique()
+#marker_list <- vector(mod = 'list', length = length(unique_marker_genes))
+get_fb_id <- function(gene, syn_db){
+  full_data <- syn_db[tolower(syn_db$current_symbol) == tolower(gene), ] %>% unique()
+  fbs <- full_data$primary_FBid
+  gene <- gene
+  out <- list(fb = fbs, gene = gene)
+  return(out)
+}
+unique_marker_genes <- unique_marker_genes[!is.na(unique_marker_genes)]
+unique_marker_list <- sapply(unique_marker_genes, get_fb_id, syn_db = syn_db, 
+                             simplify = F, USE.NAMES = TRUE)
+
+get_oma_gene <- function(dt, ortholog_table){
+  fb <- dt$fb
+  oma_gene <- filter(ortholog_table, FBgn_OMA %in% fb) %>% 
+    select(REF_GENE_NAME) %>% 
+    unique() %>% rename(OMA_GENE = REF_GENE_NAME)
+  if (length(oma_gene) != 0){
+    oma_gene <- oma_gene$OMA_GENE
+  }
+  dt$OMA_gene <- oma_gene
+  return(dt)
+}
+
+unique_marker_list <- sapply(unique_marker_list, get_oma_gene, ortholog_table = ortholog_table, 
+                             simplify = F, USE.NAMES = T)
+
+get_orthogroup <- function(dt, orthofinder_results){
+  fb <- dt$fb
+  orthogroup <- orthofinder_results[grep(fb, orthofinder_results$Dmel.pep_primary),]
+  o1 <- str_split(orthogroup$Dmel.pep_primary, ",") %>% unlist() %>% str_trim() %>% unique() %>% 
+    as.data.frame %>% mutate_all(na_if, "") %>% unlist() %>% c() %>% unname() %>% 
+    .[!is.na(.)]
+  o2 <- str_split(orthogroup$Tdal_ST_oma_primary, ",") %>% unlist() %>% str_trim() %>% unique() %>% 
+        as.data.frame %>% mutate_all(na_if, "") %>% unlist() %>% c() %>% unname() %>% 
+        .[!is.na(.)]
+  ortho_results <- list(Dmel = o1, Tdal = o2)
+  dt$ortho_results <- ortho_results
+  return(dt)
+}
+
+unique_marker_list <- sapply(unique_marker_list, get_orthogroup, orthofinder_results = orthofinder_results, 
+                             simplify = F, USE.NAMES = T)
+
+classify_type <- function(dt, Complete_Markers){
+  cls <- c()
+  Tdal_orthofinder <- (dt$ortho_results$Tdal)
+  Tdal_OMA <- (dt$OMA_gene)
+  if (dt$fb %in% Complete_Markers$FBgn_name){
+    cls <- "complete"
+  }
+  else if (length(c(Tdal_orthofinder, Tdal_OMA)) == 0){
+    cls <- "missing"
+  }
+  else {
+    cls <- "incomplete"
+  }
+  dt$class <- cls
+  return(dt)
+}
+
+unique_marker_list <- sapply(unique_marker_list, classify_type, Complete_Markers, simplify = F, USE.NAMES = T)
+
+#only return the genes that are incomplete or mising
+incomplete_markers <- unique_marker_list[sapply(unique_marker_list, function(x) x$class) %in% c("incomplete", "missing")] %>%
+  names()
+complete_markers <- unique_marker_list[sapply(unique_marker_list, function(x) x$class) %in% c("complete")] %>%
+  names()
+
+## GETTING THE FASTA FILES ----
+Dros <- readLines("../../Meetings/MarkersJan24/data/Dmel_primary.pep.fa")
+DrosD <- readLines("../../Meetings/MarkersJan24/data/Drosophila_melanogaster.BDGP6.46.cds.all.fa")
+Tdal <- readLines("../../Meetings/MarkersJan24/data/Tdal_ST_primary.prep.fa")
+dir.create("data/marker_fastas")
+load("~/Documents/PhD/Projects/2022/Meiotic_drive_2022/MeioticDrive2022_Analyses/R_analyses/indata/RData/param_checks/integrated_seurat_nf200_mtr0.20_gu0.RData")
+seurat_marker$celltype = seurat_marker$sctype_labels
+seurat_marker$treatment = "ST" #which samples start with SR treatment is SR
+seurat_marker$treatment[grepl("sr", seurat_marker$sample)] = "SR"
+```
+
+
+``` {r}
+get_gene_seq_func <- function(gene, fasta){
+  #gene2 <- paste0(">", gene)
+  find_seq <- grep(gene, fasta)[1]
+  #find_seq <- which(fasta == gene2)
+  if (length(find_seq) != 0) {
+    fasta_ss1 <- fasta[find_seq:length(fasta)]
+    fasta_ss2 <- fasta_ss1[1:(grep(">", fasta_ss1)[2]-1)]
+    return(fasta_ss2)
+  }
+}
+
+```
+
+#First round getting Protein sequences each gene
+``` {r}
+tdal_gene_func <- function(dt){
+  tdal_gene <- c(dt$ortho_results$Tdal, dt$OMA_gene) %>% unique()
+  tg_seq <- sapply(tdal_gene, get_gene_seq_func, fasta = Tdal) %>% unlist()
+  names(tg_seq) <- NULL
+  dros_gene <- c(dt$ortho_results$Dmel, dt$fb) %>% unique()
+  dg_seq <- sapply(dros_gene, get_gene_seq_func, fasta = Dros) %>% unlist()
+  names(dg_seq) <- NULL
+  
+  all_seqs <- c(tg_seq, dg_seq)
+  writeLines(all_seqs, paste0("data/marker_fastas/", dt$gene, ".fa"))
+  dt$seqs <- list()
+  dt$seqs$tdal <- tg_seq
+  dt$seqs$dros <- dg_seq
+  dt$seqs$all <- all_seqs
+  return(dt)
+}
+
+unique_marker_list <- sapply(unique_marker_list, tdal_gene_func, simplify = F, USE.NAMES = T)
+
+```
+
+# mafft of all the sequences and build tree etc
+```{bash message=FALSE, include=FALSE, engine.opts='-l'}
+mkdir data/mafft
+mkdir data/trees
+mkdir plots
+conda activate mafft
+for i in data/marker_fastas/*.fa; do
+  c=$(basename $i .fa)
+  mafft --auto $i > data/mafft/$c.aln
+  FastTree data/mafft/$c.aln > data/trees/$c.tre
+done
+```
+
+
+TURN tre files into pdfs of the trees
+```{r}
+DefaultAssay(seurat_integrated) <- "RNA"
+
+tree_plots <- function(dt, seurat_marker){
+  tree <- read.tree(paste0("data/trees/", dt$gene, ".tre"))
+  dt$tree <- tree
+  if (length(tree$tip.label) > 1){
+    pdf(paste0("plots/", dt$gene, "_tree.pdf"))
+    plot.phylo(tree)
+    edgelabels(round(tree$edge.length,3), bg="black", col="white", font=2)
+    dev.off()
+  }  
+  plot_genes <- intersect(rownames(seurat_integrated), gsub("_", "-", c(dt$OMA_gene, dt$ortho_results$Tdal)))
+  #if (length(plot_genes) != 0){
+   # DP <- DotPlot(seurat_integrated, features = plot_genes, group.by = 'integrated_snn_res.0.1')
+    #ggsave(DP, filename = paste0("plots/", dt$gene, "_DP.pdf"))
+  #}
+  return(dt)
+  
+}
+unique_marker_list <- sapply(unique_marker_list, tree_plots, simplify = F, USE.NAMES = T)
+dimplot <- DimPlot(seurat_integrated, group.by = 'integrated_snn_res.0.1', label = T)
+ggsave(dimplot, filename = "plots/Clusters_DimPlot.pdf")
+
+```
+
+# blasting time
+```{bash message=FALSE, include=FALSE, engine.opts='-l'}
+mkdir data/blast
+conda activate blast 
+makeblastdb -in ../../Meetings/MarkersJan24/data/Tdal_ST_primary.prep.fa -dbtype prot -out data/blast/Tdal
+makeblastdb -in ../../Meetings/MarkersJan24/data/Dmel_primary.pep.fa -dbtype prot -out data/blast/Dros
+
+for i in data/marker_fastas/*.fa; do
+  c=$(basename $i .fa)
+  makeblastdb -in $i -dbtype prot -out data/blast/$c
+  blastp -query $i -db data/blast/$c -outfmt 6 > data/blast/${c}_within.blast
+  
+  blastp -query $i -db data/blast/Tdal -outfmt 6 > data/blast/${c}_Tdal.blast
+  blastp -query $i -db data/blast/Dros -outfmt 6 > data/blast/${c}_Dros.blast
+done
+
+blastp -query ../../Meetings/MarkersJan24/data/Tdal_ST_primary.prep.fa -db data/blast/Dros -outfmt 6 > data/blast/Tdal_Dros.blast
+blastp -query ../../Meetings/MarkersJan24/data/Dmel_primary.pep.fa -db data/blast/Tdal -outfmt 6 > data/blast/Dros_Tdal.blast
+```
+
+```{r}
+
+```
+
+``` {r}
+add_blast_results_function <- function(dt){
+  dt$blast_results <- list()
+  dt$blast_results$within <- read.table(paste0("data/blast/", dt$gene, "_within.blast"), header = F)
+  dt$blast_results$Tdal <- read.table(paste0("data/blast/", dt$gene, "_Tdal.blast"), header = F)
+  dt$blast_results$Dros <- read.table(paste0("data/blast/", dt$gene, "_Dros.blast"), header = F)
+  return(dt)
+}
+
+unique_marker_list <- sapply(unique_marker_list, add_blast_results_function, simplify = F, USE.NAMES = T)
+```
+
+
+
+
+
+ORGANISING DATA
+```{bash}
+mkdir data/compiled_data/
+for i in data/marker_fastas/*.fa; do
+  c=$(basename $i .fa)
+  mkdir data/compiled_data/$c
+  cp $i data/compiled_data/$c
+  cp data/mafft/$c.aln data/compiled_data/$c
+  cp data/trees/$c.tre data/compiled_data/$c
+  cp data/blast/${c}_within.blast data/compiled_data/$c
+  cp data/blast/${c}_Tdal.blast data/compiled_data/$c
+  cp data/blast/${c}_Dros.blast data/compiled_data/$c
+  cp plots/${c}_tree.pdf data/compiled_data/$c
+  cp plots/${c}_DP.pdf data/compiled_data/$c
+done
+
+mkdir data/compiled_data/complete_data
+mkdir data/compiled_data/missing_data
+
+
+```
+
+```{r}
+for (gene in complete_markers){
+  system(paste0("rm -r data/compiled_data/complete_data/", gene))
+  system(paste0("cp -r data/compiled_data/", gene, " data/compiled_data/complete_data"))
+}
+
+for (gene in incomplete_markers){
+  system(paste0("rm -r data/compiled_data/missing_data/", gene))
+  system(paste0("cp -r data/compiled_data/", gene, " data/compiled_data/missing_data"))
+}
+```
+
+```{r}
+#return data.frame of gene name and fb id from unique_marker_list for missing/incomplete genes
+
+missing_fb_func = function(dt){
+  gene = dt$gene
+  fb = dt$fb
+  OMA = dt$OMA_gene
+  Orthofinder = paste(c(dt$ortho_results$Tdal, dt$ortho_results$Dmel), collapse = ", ")
+  gene[length(gene) == 0] <- NA
+  fb[length(fb) == 0] <- NA
+  OMA[length(OMA) == 0] <- NA
+  Orthofinder[length(Orthofinder) == 0 | Orthofinder == ""] <- NA
+  
+  blast_within <- dt$blast_results$within %>% 
+    filter(V11 < 1e-30 & V12 > 40) %>% select(V1, V2) %>% unlist() %>% unique() %>% 
+    paste(collapse = ", ")
+  blast_Tdal <- dt$blast_results$Tdal %>%
+    filter(V11 < 1e-30 & V12 > 40) %>% select(V1, V2) %>% unlist() %>% unique() %>% 
+    paste(collapse = ", ")
+  blast_Dros <- dt$blast_results$Dros %>% 
+    filter(V11 < 1e-30 & V12 > 40) %>% select(V1, V2) %>% unlist() %>% unique() %>% 
+    paste(collapse = ", ")  
+  return(data.frame(gene = gene, fb = fb, OMA = OMA, Orthofinder = Orthofinder, 
+                    blast_within = blast_within, blast_Tdal = blast_Tdal, blast_Dros = blast_Dros))
+}
+
+missing_fb <- lapply(unique_marker_list[incomplete_markers], missing_fb_func) %>% 
+  bind_rows() %>%  write.table("data/compiled_data/missing_data/missing_fb.txt", sep = "\t", row.names = F, 
+                              quote = F)
+
+
+```
+
+
+MANNUALY MOVE ANY FOLDERS THAT HAVE ANNNOYING NAMES, ONLY TWO I THINK THAT"S Fs(2)Ket and e(y)3 which go in 
+missing and complete respectively
+Using following scripts
+mv e\(y\)3/ complete_data
+mv Fs\(2\)Ket missing_data 
+
+
+THURSDAY THURSDAYTHURSDAYTHURSDAYTHURSDAYTHURSDAYTHURSDAYTHURSDAYTHURSDAY
+### TO DO NEXT IS TO INTERPRET ALL THE RESULTS IN A NEW SPREADSHEET AND THEN PASS THE DATA TO ALISON AND WE CAN AGREE ON THEIR FINAL RESTING PLACE IN ALL OF THIS!!!!!! 
+
+
+
+FRIDAY FRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAYFRIDAY
+### ALSO, WE NEED TO THEN LOOK AT THEIR EXPRESSION EACH CLUSTERS
+- TO DO THIS I WILL CREATE ELBOW PLOTS FOR THE CLUSTER NUMBERS, LOOK AT THE TOP THREE AND THEN ASSIN CELL TYPES BASED ON EXPRESSION OF THE MARKERS FOR EACH CLUSTER NUMBERING SYSTEM
+
+
+MONDAY MONDAYMONDAYMONDAYMONDAYMONDAYMONDAYMONDAYMONDAYMONDAYMONDAYMONDAY
+### GO OVER EVERYTHING AND THEN SEND TO ALISON ONCE YOU"RE SURE OF THE RESULTS 
+
+

@@ -1,0 +1,112 @@
+---
+title: "Untitled"
+author: "PP"
+date: "2024-05-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+samples <- c("sr1", "sr2", "sr3", "sr5", "st1","st2","st3","st5")
+for (sample in samples){
+  snps <- read.table(paste0("../filtered_vcfs_relaxed/", sample, "_filt.recode.vcf"))[c(1,2,4,5)]
+  snps <- snps[snps[,3] %in% c("A", "T", "C", "G") & snps[,4] %in% c("A", "T", "C", "G"),]
+  write.table(snps, paste0(sample, "_snps.txt"), row.names = F, col.names = F, quote = F)
+}
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{bash cluster}
+conda activate SAC
+rm *barcodes.tsv*
+for s in sr1 sr2 sr3 sr5 st1 st2 st3 st5
+do
+#samtools index ../clean_bam/${s}_dup_NCR.bam
+cp ../cellranger_out/${s}_crdata/outs/filtered_feature_bc_matrix/barcodes.tsv.gz ${s}_barcodes.tsv.gz
+gunzip ${s}_barcodes.tsv.gz
+./scAlleleCount.py --bamfile ../clean_bam/${s}_dup_NCR.bam --snps ${s}_snps.txt --barcodes ${s}_barcodes.tsv -v --output-prefix ${s}
+done
+
+mv *mtx data
+mv *barcode* data
+
+```
+
+```{bash local}
+scp -r bop20pp@stanage.sheffield.ac.uk:/mnt/parscratch/users/bop20pp/Drive/scAlleleCount/data /Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/MeioticDrive2022_Analyses/R_analyses/data/scAlleleCount
+```
+
+```{r }
+setwd('/Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/MeioticDrive2022_Analyses/R_analyses')
+load('indata/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned.RData')
+
+samples <- c("sr1", "sr2", "sr3", "sr5", "st1","st2","st3","st5")
+metadata <- seurat_integrated@meta.data
+metadata$ploidy <- NA
+metadata$nsnps <- NA
+for (samp in samples){
+  print(samp)
+  barcodes <- read.table(paste0("data/scAlleleCount/data/", samp, "_barcodes.tsv"))[,1]
+  cov <- readMM(file = paste0("data/scAlleleCount/data/", samp, "covmat.mtx"))
+  alt <- readMM(file = paste0("data/scAlleleCount/data/", samp, "altmat.mtx"))
+  ref <- readMM(file = paste0("data/scAlleleCount/data/", samp, "refmat.mtx"))
+  
+  #subsetting matrices for cells we have present in our seurat object
+  cells <- match(paste0(samp, "_", barcodes), rownames(seurat_integrated@meta.data))
+  cell_names <- rownames(seurat_integrated@meta.data)[cells]
+  cell_names <- cell_names[!is.na(cell_names)]
+  cn_df <- data.frame(cell_barcode = cell_names, cell = 1:length(cell_names))
+  cell_indx <- which(!is.na(cells))
+  covsub <- cov[cell_indx,]
+  altsub <- alt[cell_indx,]
+  refsub <- ref[cell_indx,]
+  
+  #summarising the matrices 
+  scov <- summary(covsub)
+  salt <- summary(altsub)
+  sref <- summary(refsub)
+  
+  #merging with i bring the cell and j being the position and x and y being the alt number and cov being total number (coverage)
+  het_data <- merge(salt, scov, by=c("i", "j"), all = T) %>% 
+    # change NA values to 0
+    replace_na(list(x.x = 0, x.y = 0)) %>% 
+    rename(cell = i, position = j, alt = x.x, cov = x.y) %>%
+    mutate(homozygosity = alt/cov) %>% 
+    filter(cov > 1)
+  
+  
+  het_data_sum <- het_data %>% 
+    group_by(cell) %>% 
+    summarise( #summarise so hom is no of pos where homozygosity is 1 and het is no of pos where homozygosity is not 1
+      hom = length(which(homozygosity %in% c(0,1))), 
+      het = length(which(homozygosity != 1 & homozygosity != 0)),
+      total = n()) %>% 
+    mutate(ploidy = hom/total) %>% 
+    merge(cn_df, by = 'cell')
+  
+
+  metadata$ploidy[match(het_data_sum$cell_barcode, metadata$cells)] <- het_data_sum$ploidy
+  metadata$nsnps[match(het_data_sum$cell_barcode, metadata$cells)] <- het_data_sum$total
+}    
+
+
+seurat_integrated <- AddMetaData(seurat_integrated, metadata)
+metadata <- seurat_integrated@meta.data
+metadata$ploidy_class <- ifelse(metadata$ploidy < 0.90, "diploid", "haploid")
+#metadata$ploidy_class[metadata$nsnps < 5] <- "low_coverage"
+seurat_integrated <- AddMetaData(seurat_integrated, metadata)
+#seurat_integrated@meta.data %>% 
+#  ggplot(aes(x = ploidy, y = nsnps)) + 
+#  geom_point()
+
+DimPlot(seurat_integrated, group.by = "ploidy_class")
+
+```
+
