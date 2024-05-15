@@ -3,3 +3,6 @@ data/
 indata/
 outdata/
 R_analyses.Rproj
+.Rhistory
+.DS_Store
+../DS_Store

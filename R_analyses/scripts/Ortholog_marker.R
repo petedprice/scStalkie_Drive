@@ -2,7 +2,7 @@ library(tidyverse)
 library(stringr)
 library(readxl)
 #read in a gtf file 
-gtf <- read.table("indata/ref_files/OMAnnotation_output/Tdal_ST_oma.gff", sep = '\t')
+gtf <- read.table("data/ref_files/OMAnnotation_output/Tdal_ST_oma.gff", sep = '\t')
 
 get_ref_gene_func <- function(x){
   #extract from column 9 the string starting with Dmel up until the next semicolon
@@ -43,7 +43,7 @@ genes <- apply(mrna, 1, get_ref_gene_func) %>%
   unique()
 rownames(genes) <- NULL
 
-syn_db_whole <- read.table("indata/ref_files/fb_synonym_fb_2023_06.tsv", sep = '\t', fill = T, quote = "")
+syn_db_whole <- read.table("data/ref_files/fb_synonym_fb_2023_06.tsv", sep = '\t', fill = T, quote = "")
 colnames(syn_db_whole) <- c("primary_FBid",  "organism_abbreviation",   "current_symbol",  "current_fullname",  
               "fullname_synonym",     "symbol_synonym")
 
@@ -87,9 +87,9 @@ gene_syn <- merge(genes, syn_df, by.x = "RefGene", by.y = "Dmel", all = T) %>%
   unique()
 
 #### READING IN ORTHOFINDER RESULTS OF DROS VS STALKIE
-ortho_dir <- '/Users/peter/Documents/PhD/Projects/2022/Meiotic_drive_2022/MeioticDrive2022_Analyses/CL_analysis/orthologs_id/dros_stalkie_orth/ref_files/longest_pep'
+ortho_dir <- '/Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/scStalkie_Drive/CL_analysis/orthologs_id/dros_stalkie_orth/ref_files/longest_pep'
 
-of <- read.table(paste(ortho_dir, "//Phylogenetic_Hierarchical_Orthogroups/N0.tsv", sep = ""), sep = '\t', header = T)
+of <- read.table("data/orthology/Dmel_Tdal_Orthofinder_N0.tsv", sep = '\t', header = T)
 
 #extact reads with one to one orthologs 
 check_one_to_one <- function(x){
@@ -140,12 +140,12 @@ final_orths$FBconcensus[FB_extras] <- final_orths$FBgnOF[FB_extras]
 
 
 final_orths %>% 
-  write.csv("outdata/orthologs_Jan24.csv", quote = F, row.names = F)
+  write.csv("data/orthology/orthologs_May25.csv", quote = F, row.names = F)
 final_orthslwc <- final_orths %>% 
   mutate(tolower(consensus_gene))
 
 ### ELIFE MARKERS
-markers_elifetmp <- readxl::read_excel("indata/markers/elife2019/elife-47138-supp1-v1.xlsx") %>% 
+markers_elifetmp <- readxl::read_excel("data/markers/elife2019/elife-47138-supp1-v1.xlsx") %>% 
   mutate(Gene = tolower(Gene))
 markers_elife <- final_orths %>% 
   mutate(consensus_gene = tolower(consensus_gene)) %>% 
@@ -160,10 +160,10 @@ markers_elife_out <- markers_elife %>%
   mutate(celltype = str_replace_all(celltype, " ", "_")) %>%
   mutate(celltype = str_replace_all(celltype, ",", "_or"))
 
-write.csv(markers_elife_out, "outdata/markers_elife.csv", quote = F, row.names = F)
+write.csv(markers_elife_out, "data/markers/ortholog_markers_elife.csv", quote = F, row.names = F)
 
 ######## ATLAS MARKERS ----
-markers_atlas <- read_excel("indata/markers/flyatlas_dros_markers.xlsx") %>% 
+markers_atlas <- read_excel("data/markers/flyatlas_dros_markers.xlsx") %>% 
   filter(Tissue == "testis")
 
 collapse <- function(x){
@@ -205,16 +205,16 @@ markers_atlaslistdf_out <- markers_atlaslistdf %>%
                 marker = REF_GENE_NAME) %>% #replave all spaces in celltype with _
   mutate(celltype = str_replace_all(celltype, " ", "_")) %>%
   mutate(celltype = str_replace_all(celltype, ",", "_or"))
-write.csv(markers_atlaslistdf_out, "outdata/markers_atlas.csv", quote = F, row.names = F)
+write.csv(markers_atlaslistdf_out, "data/markers/ortholog_markers_atlas.csv", quote = F, row.names = F)
 
 
 markers_elife_atlas <- markers_elife_out %>% 
   merge(markers_atlaslistdf_out, all = T)
-write.csv(markers_elife_atlas, "outdata/markers_elife_atlas.csv", quote = F, row.names = F)
+write.csv(markers_elife_atlas, "data/markers/ortholog_arkers_elife_atlas.csv", quote = F, row.names = F)
 
 
 ### EBI markers --------
-EBI_atlas <- read.table("indata/markers/EBI_atlas.tsv", sep = "\t", header = T)
+EBI_atlas <- read.table("data/markers/EBI_atlas.tsv", sep = "\t", header = T)
 unique(EBI_atlas$cluster)
 
 keep_clusters <- c("adult fat cell", "epithelial cell","muscle cell", 
@@ -263,19 +263,19 @@ dim(EBI_markers_out)
 EBI_markers_out %>% 
   dplyr::select(cluster, marker) %>% 
   rename(celltype = cluster) %>%
-  write.csv("outdata/markers_EBI.csv", quote = F, row.names = F)              
+  write.csv("data/ortholog_markers_EBI.csv", quote = F, row.names = F)              
 
 head(EBI_markers_out)
 
 
-read.csv("indata/markers/cell_cycle_markers.csv") %>% 
+read.csv("data/markers/cell_cycle_markers.csv") %>% 
   merge(final_orths, by.x = 'geneID', by.y = 'FBconcensus') %>% 
   dplyr::select('phase', 'geneID', 'modified', 'REF_GENE_NAME', 'consensus_gene') %>% 
   rename(gene = REF_GENE_NAME) %>% 
-  write.csv('outdata/cell_cycle_markers_Jan24.csv', quote = F, row.names = F)
+  write.csv('data/markers/ortholog_cell_cycle_markers_Jan24.csv', quote = F, row.names = F)
 
 
-Mah_markers <- readxl::read_excel('indata/markers/Mahadevaraju2021.xlsx', sheet = 2, col_names = T, skip = 1) %>%
+Mah_markers <- readxl::read_excel('data/markers/Mahadevaraju2021.xlsx', sheet = 2, col_names = T, skip = 1) %>%
   merge(final_orths, by.x = 'FBgn', by.y = 'FBconcensus', all.x = T)
 
 colnames(Mah_markers) <- gsub(" ", "_", colnames(Mah_markers))
@@ -291,6 +291,6 @@ for (i in 1:nrow(Mah_markers)) {
 Mah_markers_out <- unique(Mah_markers_out)
 rownames(Mah_markers_out) <- NULL
 
-write.csv(Mah_markers_out, "outdata/markers_Mah.csv", quote = F, row.names = F)
+write.csv(Mah_markers_out, "data/markers/ortholog_markers_Mah.csv", quote = F, row.names = F)
 
           
