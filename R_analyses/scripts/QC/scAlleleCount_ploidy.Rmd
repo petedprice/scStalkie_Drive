@@ -44,7 +44,9 @@ scp -r bop20pp@stanage.sheffield.ac.uk:/mnt/parscratch/users/bop20pp/Drive/scAll
 ```
 
 ```{r }
-setwd('/Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/MeioticDrive2022_Analyses/R_analyses')
+library(tidyverse)
+library(Matrix)
+setwd('/Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/scStalkie_Drive//R_analyses')
 load('indata/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned.RData')
 
 samples <- c("sr1", "sr2", "sr3", "sr5", "st1","st2","st3","st5")
