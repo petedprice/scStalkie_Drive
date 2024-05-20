@@ -115,6 +115,7 @@ Based on marker expression the following assignments have been made
 
 **Extra data for celltype ID**
 Expectations are for number of features expressed across spermatogenesis to reduce and likewise see X-chromosome inactivation
+Feature expression pattern supports expected expression patterns however no evidence for XCI. In fact there appears to be an increase in the proportion of X-linked transcripts and X-linked expression in total across spermatogenesis: does this point to disruption of the standard routes of XCI brought about through meiotic drive. This is however present in both populations so maybe not? However the ST X may still carry the machinary required for SR-suppression and may be turned on
 
 Barplots of feature and UMI expresssion
 ![](./photos/no_genes_plots.png)
