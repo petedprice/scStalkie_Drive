@@ -170,140 +170,13 @@ Notes: imposes a custom UMI threshold and is specific to each sample. We double 
 
 UMI threshold imposed by CellRanger for each sample: <https://docs.google.com/document/d/1JyscLZ-XDGEOAr4pvBXLjiQ3oy1N7dFK/edit>
 
-|
 
-Samples
 
- |
-
-sr1
-
- |
-
-sr2
-
- |
-
-sr3
-
- |
-
-sr4
-
- |
-
-sr5
-
- |
-
-st1
-
- |
-
-st2
-
- |
-
-st3
-
- |
-
-st5
-
- |
-|
-
-UMIcutoff
-
- |
-
-500
-
- |
-
-3056
-
- |
-
-1244
-
- |
-
-1103
-
- |
-
-937
-
- |
-
-1432
-
- |
-
-2073
-
- |
-
-2505
-
- |
-
-1549
-
- |
-
-SR4 - Peter - Going off of this description of the plots, it doesn't really appear to have that initial drop-off, but rather a long steady slope. I think most of the samples aren't of amazing quality as they don't plateau at the start but instantly start to slope down. 
-
-<https://www.uth.edu/cgc/assets/downloads/CG000475_TechNote_ChromiumNextGEM_SC3-_CMOWebSummary_Rev_A.pdf>
-
-<https://www.youtube.com/watch?v=DiQX-Q4apFY>
-
-ii) Also impose a 500UMI filter manual
-
-iii) run with default include introns for read mapping
-
-iii) not include expect number of cells because we don't have a good way of quantifying this
-
-Outputs: <https://drive.google.com/drive/folders/1A6QToXIaoE8uVfqjpnvIII73yReGovju>
-
-Filtered200UMI500: <https://drive.google.com/drive/folders/1A6QToXIaoE8uVfqjpnvIII73yReGovju>
-
-Interpret: ​​<https://github.com/hbctraining/scRNA-seq/blob/master/lessons/04_SC_quality_control.md>
-
-2\. Filtering with Seurat 
-
-Filter count data by:
 
 i) keeping genes expressed in at least three cells 
 
-notes: standard
 
-ii) keeping cells with at least 200 expressed genes
 
-notes: using the Cell Ranger filtered output, get the same number of cells with 100 or 200 gene filter
-
-<https://www.ncbi.nlm.nih.gov/books/NBK2227/> If you say that you don't see much of a difference between the 100 and 200 genes thresholds then I would stick to 200 so the reviewers don't complain.
-
-<https://blog.bioturing.com/2022/07/14/single-cell-quality-control/> 
-
-Bacteria - "it's hypothesized that a cell needs at least 200 genes to function properly ([Gil et al., 2004](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC515251/)). Cells with fewer genes may suffer from damage or poor technical processing and thus provide less valuable information." 
-
-iii) mitochondrial filter
-
-notes: standard but make sure not excluding sperm cells
-
-Across all 9 samples using the unfiltered cellranger data with no additional filtering thresholds there are 16,270,933 cells. Of these, there are 747 cells with more than 5% MT expression. Those cells that have mitochondrial expression have an average of 1.5 UMIs per cell up to a max of 15. Once applying the 500 UMI threshold, there are no cells with more than 5% MT expression.
-
-Our filtered dataset has no cells > 5% MT expression.
-
-iv) remove sr4
-
-Remove - odd number of cells and inflection plot from CellRanger suggests data is compromised
-
-4\. Normalisation & scaling: Raw counts were then normalized and scaled for each sample to account for differences in sequencing depth per cell using the 'SCTransfrom' function (Hafemeister and Satija 2019).
-
-Decided to use  SCTransform instead of NormalizeData because it is more widely used and newer.
 
 Cell cycle markers incorporated
 
@@ -317,39 +190,15 @@ All 8 samples together. Tried separately and ruled out.
 
 Using old stalkie reference genome 
 
-Performed using -e 10e-10 -b blastn -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore sseq'
+Orthofinder 
 
-Number of transcripts for Stalkie: 25647
+Number of transcripts for Stalkie: 
 
-Number of transcripts for Drosophila: 13968
+Number of transcripts for Drosophila: 
 
-Number of orthologs: 6536
+Number of orthologs: 
 
-To do
 
-a) Investigate remove doublets and when do to this e.g pre or post norm or whether it matters or not.
-
--   Has to be done post normalisation but before integration and regressing out any variables (e.g cell cycle marker expression)
-
-b) Table - no of cells per sample, no of expressed genes per sample - this is final filtered dataset
-
-c) Calculate CMS and iLISI from preprint [www.biorxiv.org/content/10.1101/2021.08.18.456898v1.full.pdf](http://www.biorxiv.org/content/10.1101/2021.08.18.456898v1.full.pdf)
-
-8\. Cell types
-
-Witt 2019 core markers and other markers.
-
-![](https://lh7-us.googleusercontent.com/fNjcLNpi-S3kgVe9dZIxotX-2bFGmCHrgCd2V3X5ICgv4Jjgk2X1nnfcW8I59DSUZx2VRLSI6qOM37P4RlZRWOJxR5xCtAwDhDr5Y4pBMKmmO1JvCyodO2_759Cw_bMK-3Fmxvr4M8j1-cMo5DFI7KA)
-
-Fig 1./2. 
-
-CMS: To calculate a CMS, we first gather the cell-type identities obtained by classifying cells from only a single sample. We then compare the cell-type classifications of each sample individually to cell-type classifications after multiple sample merging. We measure the fraction of cells that have changed classification and generate a statistic, such that a CMS score of 0 means that no cells changed classification/cell-type identity after merging datasets, while a CMS of 0.2 means a misclassification of 20% of cells. A higher CMS score will result when cell barcodes change cell-type identity after sample merging and indicates over-correction of the sample.
-
-Integration LISI (iLISI): In our system, an iLISI score of 1 represents a UMAP completely segregated by sample ID, while an iLISI of 0 represents a perfectly integrated UMAP. I think this is just a UMAP plot coloured by sample not by cell type. Can calculate exact score with [www.github.com/immunogenomics/LISI](http://www.github.com/immunogenomics/LISI)
-
-Fig.5 
-
-8\. Discuss cell type identification
 
 Testes markers: <https://docs.google.com/document/d/1k85yNKhAET0U1xB9_-ukp_KJaUqDHtpt6Pt57FbeWJE/edit#>
 
