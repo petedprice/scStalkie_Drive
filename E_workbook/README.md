@@ -111,7 +111,7 @@ Based on marker expression the following assignments have been made
 |16|NA|NA|Some cyst markers and close in space but very low expression|
 |17|Spermatocyte|Secondary Spermatocyte|Number of features expressed starts to drop off at this point in keeping with [Witt et al. (2019)](https://iiif.elifesciences.org/lax/47138%2Felife-47138-fig2-v1.tif/full/1500,/0/default.jpg)|
 |18|NA|NA|Some cyst markers and close in space but very low expression|
-|19|NA|NA|May be muscle but no markers for muscle used|
+|19|Muscle|Muscle|Expresses Mhc, marker for muscle|
 
 **Extra data for celltype ID**
 Expectations are for number of features expressed across spermatogenesis to reduce and likewise see X-chromosome inactivation
