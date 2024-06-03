@@ -40,7 +40,7 @@ mv *barcode* data
 ```
 
 ```{bash local}
-scp -r bop20pp@stanage.sheffield.ac.uk:/mnt/parscratch/users/bop20pp/Drive/scAlleleCount/data /Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/MeioticDrive2022_Analyses/R_analyses/data/scAlleleCount
+scp -r bop20pp@stanage.sheffield.ac.uk:/mnt/parscratch/users/bop20pp/Drive/scAlleleCount/data /Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/MeioticDrive2022_Analyses/R_analyses/data/scAlleleCount/stringent
 ```
 
 
@@ -50,12 +50,14 @@ library(Matrix)
 library(Seurat)
 
 setwd('/Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/scStalkie_Drive//R_analyses')
-load('indata/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned.RData')
+load('data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_celltype.RData')
 
 samples <- c("sr1", "sr2", "sr3", "sr5", "st1","st2","st3","st5")
 metadata <- seurat_integrated@meta.data
 metadata$ploidy <- NA
 metadata$nsnps <- NA
+het_data_sum_save <- list()
+het_data_save <- list()
 for (samp in samples){
   print(samp)
   barcodes <- read.table(paste0("data/scAlleleCount/data/", samp, "_barcodes.tsv"))[,1]
@@ -85,7 +87,8 @@ for (samp in samples){
     rename(cell = i, position = j, alt = x.x, cov = x.y) %>%
     mutate(homozygosity = alt/cov) %>% 
     filter(cov > 1)
-  
+  het_data$sample <- samp
+  het_data_save[[samp]] <- het_data
   
   het_data_sum <- het_data %>% 
     group_by(cell) %>% 
@@ -95,10 +98,13 @@ for (samp in samples){
       total = n()) %>% 
     mutate(ploidy = hom/total) %>% 
     merge(cn_df, by = 'cell')
-  
+  het_data_sum$sample <- samp
+
+  het_data_sum_save[[samp]] <- het_data_sum
 
   metadata$ploidy[match(het_data_sum$cell_barcode, metadata$cells)] <- het_data_sum$ploidy
   metadata$nsnps[match(het_data_sum$cell_barcode, metadata$cells)] <- het_data_sum$total
+  
 }    
 
 

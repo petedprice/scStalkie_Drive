@@ -25,13 +25,11 @@ library(edgeR)
 load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_celltype.RData")
 seurat_integrated$treatment <- "SR"
 seurat_integrated$treatment[grep("st", seurat_integrated$sample)] <- "ST"
-Idents(seurat_integrated) <- seurat_integrated$celltype
 DefaultAssay(seurat_integrated) <- "integrated"
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
-seurat_integrated <- 
-  subset(seurat_integrated, idents = "Cyst")
+
 
 ##### BIOCONDUCTOR EDGER2 -----
 ## PLOT FUNCTION ---- 
