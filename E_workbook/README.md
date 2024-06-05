@@ -124,13 +124,18 @@ X expression patterns
 
 
 **Ploidy Check**
-Using scAlleleCount and various thresholds, we explored whether we could detect haploid cells 
+
+Using scAlleleCount and various thresholds, we explored whether we could detect haploid cells. 
 ![](./photos/ploidy_check.png)
-In each cell of the plot, the top number refers to the depth threshold and the bottom number is the SNP threshold
+
+In each cell of the plot, the top number refers to the depth threshold and the bottom number is the SNP threshold.
 For heterozygote sites, the depth threshold has to be passed for both alt and ref reads. For the homozygote site to be called, they need greater than twice this threshold mapping to either ref or alt and 0 to the other.
 The snp threshold is the minimum number of SNPs required to call a cell haploid or diploid 
 
-See <https://docs.google.com/spreadsheets/d/1AiUcjYntJXEte5gfKSrbC_slKvVhC1lsaYZYsuSY23s/edit#gid=0>
+Below is a subset of the data 
+![](./photos/scAlleleCount_params_table.png)
+
+See <https://docs.google.com/spreadsheets/d/1AiUcjYntJXEte5gfKSrbC_slKvVhC1lsaYZYsuSY23s/edit#gid=0> for the rest of the full data
 
 
 METHODS
