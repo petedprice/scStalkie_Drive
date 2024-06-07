@@ -65,8 +65,15 @@ sce <- seurat_integrated_ss %>% as.SingleCellExperiment(assay = "RNA")
 ### PSEUDOBULK INDIVIDUAL CELL TYPES ----
 agg_cell_types <- aggregateAcrossCells(sce, id=colData(sce)[,c("celltype", "sample")])
 agg_cell_types <- agg_cell_types[,agg_cell_types$ncells >= 10]
-
 y <- DGEList(counts(agg_cell_types), samples=colData(agg_cell_types))
+yc <- calcNormFactors(y)
+
+cpm <- edgeR::cpm(y, log=T) %>% as.data.frame()
+cpmc <- edgeR::cpm(y, log=T) %>% as.data.frame()
+
+heatmap(cor(cpm))
+heatmap(cor(cpmc))
+
 keep <- filterByExpr(y, group=agg_cell_types$treatment)
 y <- y[keep,]
 

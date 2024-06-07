@@ -54,7 +54,7 @@ if (run_type == "eval_k"){
   pdf("k_evaluation.pdf", height = 7, width = 28)
   icMat <- evaluateK(counts, pseudotime = pseudotime, cellWeights = cellWeights,
                      conditions = factor(sce$treatment),
-                     nGenes = 500,
+                     nGenes = 200,
                      k = 3:10)
   dev.off()
   
