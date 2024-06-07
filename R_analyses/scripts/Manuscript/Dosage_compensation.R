@@ -66,16 +66,11 @@ sce <- seurat_integrated_ss %>% as.SingleCellExperiment(assay = "RNA")
 agg_cell_types <- aggregateAcrossCells(sce, id=colData(sce)[,c("celltype", "sample")])
 agg_cell_types <- agg_cell_types[,agg_cell_types$ncells >= 10]
 y <- DGEList(counts(agg_cell_types), samples=colData(agg_cell_types))
-yc <- calcNormFactors(y)
-
 cpm <- edgeR::cpm(y, log=T) %>% as.data.frame()
-cpmc <- edgeR::cpm(y, log=T) %>% as.data.frame()
-
-heatmap(cor(cpm))
-heatmap(cor(cpmc))
-
 keep <- filterByExpr(y, group=agg_cell_types$treatment)
 y <- y[keep,]
+y <- calcNormFactors(y)
+y <- estimateDisp(y, design)
 
 cpm <- edgeR::cpm(y, log=T) %>% as.data.frame()
 
@@ -105,16 +100,15 @@ check_dc_plot <- tidy_cpm %>%
                                             "Post-meiotic \ncyst", "GSC & Spermatogonia", 
                                             "Spermatocytes", "Spermatids"))) %>%
   filter(Chr != 'Mito') %>% 
-  group_by(celltype, genes, Chr) %>% 
+  group_by(celltype, genes, Chr, treatment) %>% 
   summarise(logcpm = mean(logcpm)) %>% 
   mutate(Chromosome = Chr) %>% 
   ggplot(aes(x = celltype, y = logcpm, fill = Chromosome)) + geom_boxplot(outlier.alpha = 0.2) + 
   labs(x = "Cell Type", y = "log(CPM)", fill = "Chromosome") + #add sig values between Chrs
   stat_compare_means( aes(label = ..p.signif..), 
                       label.x = 1.5, label.y = 20) + 
-  theme_classic() + scale_fill_brewer(palette = 'Set2')
+  theme_classic() + scale_fill_brewer(palette = 'Set2') 
 
-check_dc_plot
 
 ggsave("plots/dosage_compensation.pdf", check_dc_plot, width = 10, height = 6)
 
