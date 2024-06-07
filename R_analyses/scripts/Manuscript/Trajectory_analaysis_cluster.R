@@ -1,7 +1,7 @@
 library(Seurat)
 library(dplyr)
-library(slingshot)
-library(tradeSeq)
+library(slingshot, lib = '.')
+library(tradeSeq, lib = '.')
 
 args <- commandArgs(trailingOnly=TRUE)
 load(args[1])
