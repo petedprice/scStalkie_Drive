@@ -55,7 +55,7 @@ if (run_type == "eval_k"){
   icMat <- evaluateK(counts, pseudotime = pseudotime, cellWeights = cellWeights,
                      conditions = factor(sce$treatment),
                      nGenes = 200,
-                     k = 3:10)
+                     k = 3:20)
   dev.off()
   
   save(icMat, file = "icMat.RData")
