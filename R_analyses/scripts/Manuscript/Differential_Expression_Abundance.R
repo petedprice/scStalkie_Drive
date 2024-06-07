@@ -12,33 +12,47 @@ library(ggpubr)
 library(gridExtra)
 library(tidyverse)
 library(data.table)
-library("biomaRt")
 library(clusterProfiler)
 library(ggrepel)
 library(lme4)
 library(GenomicFeatures)
 library(ggrepel)
 library(lme4)
-library(edgeR)
 
 
-load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_celltype.RData")
-seurat_integrated$treatment <- "SR"
-seurat_integrated$treatment[grep("st", seurat_integrated$sample)] <- "ST"
-Idents(seurat_integrated) <- seurat_integrated$celltype
-DefaultAssay(seurat_integrated) <- "integrated"
+load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_ss.RData")
+Muscle <- c(17)
+Spermatocytes <- c(10,11,13)
+Spermatids <- c(3,4)
+`GSC/Spermatogonia` <- c(0,2,7)
+Pre_meiotic_cyst <- c(5,12,14,15)
+Post_meiotic_cyst <- c(1,6,8,9,16)
+
+### Plotting key markers against numbered cell clusters for assignment ---
+
+seurat_integrated_ss@meta.data$celltype <- 'NA'
+seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Muscle] <- "Muscle"
+seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Spermatocytes] <- "Spermatocytes"
+seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Spermatids] <- "Spermatids"
+seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% `GSC/Spermatogonia`] <- "GSC & Spermatogonia"
+seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Pre_meiotic_cyst] <- "Pre-meiotic \ncyst"
+seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Post_meiotic_cyst] <- "Post-meiotic \ncyst"
+seurat_integrated_ss$treatment <- "SR"
+seurat_integrated_ss$treatment[grep("st", seurat_integrated_ss$sample)] <- "ST"
+Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
+
+DefaultAssay(seurat_integrated_ss) <- "integrated"
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
-seurat_integrated <- 
-  subset(seurat_integrated, idents = "Cyst")
+
 
 ##### BIOCONDUCTOR EDGER2 -----
 ## PLOT FUNCTION ---- 
 make_pca_function <- function(x, ortholog_table){
   md <- metadata(x)
   mds_data <- md$y %>% 
-    cpm(log = TRUE) %>% 
+    edgeR::cpm(log = TRUE) %>% 
     plotMDS()
   
   PCA <- data.frame(x = mds_data$x, 
@@ -48,7 +62,7 @@ make_pca_function <- function(x, ortholog_table){
     ggplot(aes(x = x, y = y, fill = names, label = names, colour = treatment))  +
     geom_text(hjust="inward", vjust="inward") +
     labs(x = "PC2", y = "PC1", title = md$y$samples$celltype[1]) 
-  pdf(paste("plots/DEG/PCA_", md$y$samples$celltype[1], ".pdf", sep = ""))
+  pdf(paste("plots/PCA_", md$y$samples$celltype[1], ".pdf", sep = ""))
   print(PCA) 
   dev.off()
   x <- x[is.na(x$logFC) == FALSE,] %>%
@@ -72,7 +86,7 @@ make_pca_function <- function(x, ortholog_table){
     theme(legend.position = "none")  + 
     geom_hline(yintercept = -log10(0.05), color = 'grey', linetype = 'dashed') + 
     geom_vline(xintercept = c(-1,1), color = 'grey', linetype = 'dashed')
-  pdf(paste("plots/DEG/DEG_", md$y$samples$celltype[1], ".pdf", sep = ""))
+  pdf(paste("plots/DEG_", md$y$samples$celltype[1], ".pdf", sep = ""))
   print(Volcano) 
   dev.off()
   ST_bias_genes <- filter(x, logFC > 1, FDR < 0.05)
@@ -84,7 +98,7 @@ make_pca_function <- function(x, ortholog_table){
 }
 
 sce <- #subset(seurat_integrated, celltype != 'Unknown') %>% 
-  seurat_integrated %>% as.SingleCellExperiment(assay = "RNA")
+  seurat_integrated_ss %>% as.SingleCellExperiment(assay = "RNA")
 
 
 #### BULK RNASEQ ACROSS WHOLE TISSUE ----
@@ -108,7 +122,7 @@ agg_cell_types <- agg_cell_types[,agg_cell_types$ncells >= 10]
 y <- DGEList(counts(agg_cell_types), samples=colData(agg_cell_types))
 keep <- filterByExpr(y, group=agg_cell_types$treatment)
 y <- y[keep,]
-mds_data <-cpm(y, log = TRUE) %>% 
+mds_data <-edgeR::cpm(y, log = TRUE) %>% 
   plotMDS()
 plot <- data.frame(x = mds_data$x, 
                    y = mds_data$y, 
@@ -119,7 +133,7 @@ plot <- data.frame(x = mds_data$x,
   geom_text(hjust="inward", vjust="inward") +
   labs(x = "PC2", y = "PC1", title = "ind cell types")
 
-pdf("plots/DEG/PCA_pseudobulk_ind_cell_types.pdf")
+pdf("plots/PCA_pseudobulk_ind_cell_types.pdf")
 plot 
 dev.off()
 
@@ -137,26 +151,66 @@ Volcanos <- lapply(cell_type_DEG_output, function(x)(return(x$Volcano)))
 
 
 
-pdf("plots/DEG/PCA_compiled.pdf", width = 14, height = 10)
+pdf("plots/PCA_compiled.pdf", width = 14, height = 10)
 ggarrange(plotlist =  PCAs, common.legend = T)
 dev.off()
 
 
-pdf("plots/DEG/Volcanos_compiled.pdf", width = 20, height = 15)
+pdf("plots/Volcanos_compiled.pdf", width = 20, height = 15)
 ggarrange(plotlist = Volcanos, common.legend = T)
 dev.off()
 
-###plotMD check ---
-MD_check_plot <- list()
-par(mfrow=c(4,4))
-for (i in names(de.results_act)){
-  print(i)
-  metadata(de.results_act[[i]])$y %>% plotMD()
-  #MD_check_plot[[i]]
-}
+
+dif_exp_data <- lapply(cell_type_DEG_output, function(x)(return(x$all))) %>% 
+  bind_rows()
+
+dif_exp_data$Significant <- ifelse(dif_exp_data$logFC > 1 & dif_exp_data$FDR < 0.05, "ST bias",
+                                   ifelse(dif_exp_data$logFC < -1 & dif_exp_data$FDR < 0.05, "SR bias", "NS"))
+
+dif_exp_figure <- dif_exp_data %>% 
+  filter(Significant != "NS") %>% 
+  ggplot(aes(x = celltype, fill = Significant)) + geom_bar(position = 'dodge') + 
+  theme_classic() + scale_fill_brewer(palette = 'Set2') + labs(y = "Number of DEGs", 
+                                                               x = 'Cell Type')
 
 
 
+csq_chr_func <- function(x){
+  data <- x$all
+  data$sig <- 'Unbiased'
+  data$sig[data$PValue < 0.05 & data$logFC > 1] <- 'ST bias'
+  data$sig[data$PValue < 0.05 & data$logFC < -1] <- 'SR bias'
+  chsq_table <- data %>%
+    group_by(sig, chr) %>% 
+    summarise(n = n()) %>% #trnasformn variables into rows and columns
+    spread(sig, n)
+  chsq_results <- chisq.test(chsq_table[,c(2:4)])
+  rsds <- chsq_results$residuals %>% as.data.frame()
+  rsds$chr <- chsq_table$chr
+  rsds$celltype <- data$celltype[[1]]
+  
+  rsds$pvalue <- chsq_results$p.value[1]
+  return(rsds)
+} 
+
+chisq_list <- lapply(cell_type_DEG_output, csq_chr_func) %>% 
+  bind_rows() %>% #collapse not_sig, SR_bias and ST_bias into single column 
+  pivot_longer(c("Unbiased", "SR bias", "ST bias"), names_to = "Expression class", values_to = "chisq_resid")
+
+
+DGE_chisq_plot <- ggplot(chisq_list, aes(x = chr, y = chisq_resid, fill = `Expression class`)) + 
+  facet_wrap(~celltype) +
+  geom_bar(stat = 'identity', position = 'dodge') + 
+  theme_classic() + 
+ scale_fill_brewer(palette = "Set2") + 
+  labs(x = "Chromosome", y = "Residuals")
+
+ggarrange(DGE_chisq_plot, dif_exp_figure, ncol = 1, heights = c(2, 1), common.legend = T, 
+          labels = c("A", "B"), legend = "bottom")
+ggsave("plots/DGE_chisq_plot.pdf", width = 15, height = 20, units = "cm")
+
+###################################################
+########## DELETE ---------
 
 #### CHECK CELLTYPE ABUNDANCE DIFFERENCES ----
 abundances <- table(sce$celltype, sce$sample)
