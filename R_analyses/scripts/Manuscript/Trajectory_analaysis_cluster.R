@@ -12,6 +12,7 @@ args <- commandArgs(trailingOnly=TRUE)
 load(args[1])
 eval_k = args[2]
 
+print("check 1")
 Muscle <- c(17)
 Spermatocytes <- c(10,11,13)
 Spermatids <- c(3,4)
@@ -31,6 +32,7 @@ seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% P
 seurat_integrated_ss$treatment <- "SR"
 seurat_integrated_ss$treatment[grep("st", seurat_integrated_ss$sample)] <- "ST"
 Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
+print("check 2")
 
 DefaultAssay(seurat_integrated_ss) <- "RNA"
 Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
@@ -42,11 +44,13 @@ sce <- seurat_integrated_ss %>%
 
 sce <- slingshot(sce, clusterLabels = 'celltype', reducedDim = "UMAP", start.clus = 'GSC & Spermatogonia',
                  end.clus = 'Spermatids')
+print("check 3")
 
 counts <- counts(sce)[which(rowSums(counts(sce)) != 0),]
 pseudotime <- slingPseudotime(sce, na = FALSE)
 cellWeights <- slingCurveWeights(sce)
 
+print("check 4")
 
 ################################# TRADESEQ -------------------------------------
 #evaluate k 
