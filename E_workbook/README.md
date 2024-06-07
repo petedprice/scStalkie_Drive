@@ -28,10 +28,6 @@ Google sheet for filtering thresholds in literature: 
 MARKERS AND CLUSTERING 
 =======================
 
-To do
------
-
--   Agree on all final markers to use
 
 Clustering and cluster number
 -----------------------------
@@ -126,6 +122,22 @@ FeaturePlots of feature and UMI expression
 X expression patterns 
 ![](./photos/xplots.png)
 
+
+**Ploidy Check**
+
+Using scAlleleCount and various thresholds, we explored whether we could detect haploid cells. 
+![](./photos/ploidy_check.png)
+
+In each cell of the plot, the top number refers to the depth threshold and the bottom number is the SNP threshold.
+For heterozygote sites, the depth threshold has to be passed for both alt and ref reads. For the homozygote site to be called, they need greater than twice this threshold mapping to either ref or alt and 0 to the other.
+The snp threshold is the minimum number of SNPs required to call a cell haploid or diploid 
+
+Below is a subset of the data 
+![](./photos/scAlleleCount_params_table.png)
+
+See <https://docs.google.com/spreadsheets/d/1AiUcjYntJXEte5gfKSrbC_slKvVhC1lsaYZYsuSY23s/edit#gid=0> for the rest of the full data
+
+
 METHODS
 =======
 
@@ -158,6 +170,24 @@ To add mitochondrial reference to genomic reference do the following: 
 - change tRNA to exon 
 
 - change rRNA to exon
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### OLD ----
 
 Filtering steps, decisions to date:
 -----------------------------------
