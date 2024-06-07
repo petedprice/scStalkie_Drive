@@ -10,7 +10,7 @@ library(tradeSeq, lib = '.')
 
 args <- commandArgs(trailingOnly=TRUE)
 load(args[1])
-eval_k = args[2]
+run_type = args[2]
 
 Muscle <- c(17)
 Spermatocytes <- c(10,11,13)
@@ -49,21 +49,23 @@ cellWeights <- slingCurveWeights(sce)
 
 ################################# TRADESEQ -------------------------------------
 #evaluate k 
-if (eval_k == "Yes"){
+if (run_type == "eval_k"){
   print('evaluating K')
-  icMat <- evaluateK(sce,
+  pdf("k_evaluation.pdf", height = 7, width = 28)
+  icMat <- evaluateK(counts, pseudotime = pseudotime, cellWeights = cellWeights,
                      conditions = factor(sce$treatment),
-                     nGenes = 200,
-                     k = 3:10, parallel=T)
+                     nGenes = 500,
+                     k = 3:10)
+  dev.off()
   
   save(icMat, file = "icMat.RData")
-} else {
+} else if (run_type == "fitGAM") {
   icMat <- load(file = "icMat.RData")
   #FItting GAM
   sce <- fitGAM(counts = counts(sce), pseudotime = pseudotime, 
               cellWeights = cellWeights, nknots = args[3], conditions = as.factor(sce$treatment))
   save(sce, file = "sce_GAMed.RData")
-}
+} 
 
 
 
