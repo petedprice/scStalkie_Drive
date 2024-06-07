@@ -42,23 +42,19 @@ sce <- seurat_integrated_ss %>%
 
 sce <- slingshot(sce, clusterLabels = 'celltype', reducedDim = "UMAP", start.clus = 'GSC & Spermatogonia',
                  end.clus = 'Spermatids')
-print("check 3")
 
 counts <- counts(sce)[which(rowSums(counts(sce)) != 0),]
-print("check 4")
 pseudotime <- slingPseudotime(sce, na = FALSE)
-print("check 5")
 cellWeights <- slingCurveWeights(sce)
-print("check 6")
 
 ################################# TRADESEQ -------------------------------------
 #evaluate k 
 if (eval_k == "Yes"){
-  print(eval_k)
+  print('evaluating K')
   icMat <- evaluateK(sce,
                      conditions = factor(sce$treatment),
                      nGenes = 200,
-                     k = 3, parallel=F)
+                     k = 3:10, parallel=F)
   
   save(icMat, "icMat.RData")
 } else {
