@@ -53,7 +53,8 @@ print("check 6")
 
 ################################# TRADESEQ -------------------------------------
 #evaluate k 
-if (eval_k == T){
+if (eval_k == "Yes"){
+  print(eval_k)
   icMat <- evaluateK(sce,
                      conditions = factor(sce$treatment),
                      nGenes = 200,
@@ -61,7 +62,7 @@ if (eval_k == T){
   
   save(icMat, "icMat.RData")
 } else {
-  icMat <- readRDS("icMat.rds")
+  icMat <- readRDS("icMat.RData")
   #FItting GAM
   sce <- fitGAM(counts = counts(sce), pseudotime = pseudotime, 
               cellWeights = cellWeights, nknots = args[3], conditions = as.factor(sce$treatment))
