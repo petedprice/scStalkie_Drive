@@ -2,6 +2,9 @@ library(Seurat)
 library(dplyr)
 library(slingshot, lib = '.')
 library(tradeSeq, lib = '.')
+install.packages("princurve", lib = '.')
+BiocManager::install("TrajectoryUtils", lib = '.')
+
 library(princurve, lib = '.')
 library(TrajectoryUtils, lib = '.')
 
