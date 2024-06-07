@@ -2,6 +2,8 @@ library(Seurat)
 library(dplyr)
 library(slingshot, lib = '.')
 library(tradeSeq, lib = '.')
+library(princurve, lib = '.')
+library(TrajectoryUtils, lib = '.')
 
 args <- commandArgs(trailingOnly=TRUE)
 load(args[1])
