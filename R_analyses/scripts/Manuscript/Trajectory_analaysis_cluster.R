@@ -54,7 +54,7 @@ if (eval_k == "Yes"){
   icMat <- evaluateK(sce,
                      conditions = factor(sce$treatment),
                      nGenes = 200,
-                     k = 3:10, parallel=F)
+                     k = 3:10, parallel=T)
   
   save(icMat, "icMat.RData")
 } else {
