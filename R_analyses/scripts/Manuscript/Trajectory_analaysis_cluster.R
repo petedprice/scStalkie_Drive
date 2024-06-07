@@ -56,13 +56,13 @@ if (eval_k == "Yes"){
                      nGenes = 200,
                      k = 3:10, parallel=T)
   
-  save(icMat, "icMat.RData")
+  save(icMat, file = "icMat.RData")
 } else {
-  icMat <- readRDS("icMat.RData")
+  icMat <- load(file = "icMat.RData")
   #FItting GAM
   sce <- fitGAM(counts = counts(sce), pseudotime = pseudotime, 
               cellWeights = cellWeights, nknots = args[3], conditions = as.factor(sce$treatment))
-  save(sce, "sce_GAMed.RData")
+  save(sce, file = "sce_GAMed.RData")
 }
 
 
