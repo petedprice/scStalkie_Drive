@@ -62,9 +62,9 @@ if (run_type == "eval_k"){
 } else if (run_type == "fitGAM") {
   icMat <- load(file = "icMat.RData")
   #FItting GAM
-  sce <- fitGAM(counts = counts(sce), pseudotime = pseudotime, 
+  sce_trad <- fitGAM(counts = counts(sce), pseudotime = pseudotime, 
               cellWeights = cellWeights, nknots = 10, conditions = as.factor(sce$treatment))
-  save(sce, file = "sce_GAMed.RData")
+  save(sce, sce_trad, file = "sce_GAMed.RData")
 } 
 
 

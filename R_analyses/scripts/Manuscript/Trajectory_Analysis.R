@@ -6,8 +6,61 @@ library(slingshot)
 library(tradeSeq)
 library(grDevices)
 library(TSCAN)
+library(pheatmap)
 
 load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_ss.RData")
+load("data/trajectory/sce_GAMed.RData")
+sce_trad <- sce
+################################################
+
+rowData(sce_trad)$assocRes <- associationTest(sce_trad, lineages = T, l2fc = log2(0.5))
+assocRes <- rowData(sce_trad)$assocRes
+assocRes <- assocRes[is.na(assocRes$waldStat) == F,]
+
+assocRes %>% 
+  ggplot(aes(x = pvalue_lineage1_conditionST, y = pvalue_lineage1_conditionSR)) + 
+  geom_point()
+
+bias_genes <-  rownames(assocRes)[
+  which(p.adjust(assocRes$pvalue_lineage1_conditionSR, "fdr") <= 0.05)
+]
+
+yhatSmooth <- predictSmooth(sce_trad, gene = c("gene-9128"), nPoints = 50, tidy = FALSE)
+yhatSmooth <- yhatSmooth[is.na(yhatSmooth[,1]) == FALSE,]
+heatSmooth <- pheatmap(t(scale(t(yhatSmooth[1:50]))),
+                       cluster_cols = FALSE,
+                       show_rownames = T, 
+                       show_colnames = T)
+
+
+condRes <- conditionTest(sce, l2fc = log2(2))
+condRes$padj <- p.adjust(condRes$pvalue, "fdr")
+mean(condRes$padj <= 0.05, na.rm = TRUE)
+sum(condRes$padj <= 0.05, na.rm = TRUE)
+
+conditionGenes <- rownames(condRes)[condRes$padj <= 0.05]
+conditionGenes <- conditionGenes[!is.na(conditionGenes)]
+
+oo <- order(condRes$waldStat, decreasing = TRUE)
+
+# most significant gene
+plotSmoothers(sce_trad, assays(sce_trad)$counts,
+              gene = rownames(assays(sce_trad)$counts)[oo[1]],
+              alpha = 1, border = TRUE)
+
+################# del
+plotSmoothers(sce_trad, assays(sce)$counts,
+              gene = 'PB.370',
+              alpha = 1, border = TRUE)
+################
+
+# least significant gene
+plotSmoothers(sce_trad, assays(sce_trad)$counts,
+              gene = rownames(assays(sce_trad)$counts)[oo[nrow(sce_trad)]],
+              alpha = 1, border = TRUE)
+
+
+#################################################
 Muscle <- c(17)
 Spermatocytes <- c(10,11,13)
 Spermatids <- c(3,4)
