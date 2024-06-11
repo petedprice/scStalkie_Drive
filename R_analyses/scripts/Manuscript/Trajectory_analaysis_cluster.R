@@ -13,15 +13,15 @@ load(args[1])
 run_type = args[2]
 
 
-Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
+Idents(seurat_final) <- seurat_final$celltype
 
 DefaultAssay(seurat_integrated_ss) <- "RNA"
-Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
+Idents(seurat_final) <- seurat_final$celltype
 
 keep_clusters <- c("GSC/Spermatogonia", "Primary Spermatocytes", "Spermatocytes", "Secondary Spermatocytes", "Spermatids")
-keep_clusters <- keep_clusters[keep_clusters %in% unique(seurat_integrated_ss$celltype)]
+keep_clusters <- keep_clusters[keep_clusters %in% unique(seurat_final$celltype)]
 
-sce <- seurat_integrated_ss %>% 
+sce <- seurat_final %>% 
   subset(., idents = keep_clusters) %>% 
   as.SingleCellExperiment(., assay = 'RNA')
 
