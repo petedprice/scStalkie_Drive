@@ -19,31 +19,17 @@ library(ggrepel)
 library(lme4)
 
 
-load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_ss.RData")
-Muscle <- c(17)
-Spermatocytes <- c(10,11,13)
-Spermatids <- c(3,4)
-`GSC/Spermatogonia` <- c(0,2,7)
-Pre_meiotic_cyst <- c(5,12,14,15)
-Post_meiotic_cyst <- c(1,6,8,9,16)
-
-seurat_integrated_ss@meta.data$celltype <- 'NA'
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Muscle] <- "Muscle"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Spermatocytes] <- "Spermatocytes"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Spermatids] <- "Spermatids"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% `GSC/Spermatogonia`] <- "GSC & Spermatogonia"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Pre_meiotic_cyst] <- "Pre-meiotic \ncyst"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Post_meiotic_cyst] <- "Post-meiotic \ncyst"
-seurat_integrated_ss$treatment <- "SR"
-seurat_integrated_ss$treatment[grep("st", seurat_integrated_ss$sample)] <- "ST"
-Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
-
-DefaultAssay(seurat_integrated_ss) <- "integrated"
+load("data/RData/seurat_final.RData")
+DefaultAssay(seurat_final) <- "RNA"
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
 
-sce <- seurat_integrated_ss %>% as.SingleCellExperiment(assay = "RNA")
+Xgenes <- filter(ortholog_table, chr == "Chr_X")$REF_GENE_NAME %>% 
+  intersect(rownames(seurat_final))
+Agenes <- filter(ortholog_table, chr %in% c("Chr_1", "Chr_2"))$REF_GENE_NAME %>% 
+  intersect(rownames(seurat_final))
+sce <- seurat_final %>% as.SingleCellExperiment(assay = "RNA")
 
 ################################################################################
 
@@ -175,9 +161,11 @@ tidy_raw_counts <- raw_counts %>% as.data.frame %>%
   mutate(Chr = ifelse(!(genes %in% c(Xgenes, Agenes)), "Mito", Chr))
 
 check_dc_plot <- tidy_cpm %>% 
+  filter(logcpm > 2) %>% 
   mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic \ncyst", 
-                                                "Post-meiotic \ncyst", "GSC & Spermatogonia", 
-                                                "Spermatocytes", "Spermatids"))) %>%
+                                                "Post-meiotic \ncyst", "GSC/Spermatogonia", 
+                                                "Primary Spermatocytes", "Secondary Spermatocytes", 
+                                                "Spermatids"))) %>%
   filter(Chr != 'Mito') %>% 
   group_by(celltype, genes, Chr, treatment) %>% 
   summarise(logcpm = mean(logcpm)) %>% 
@@ -186,7 +174,8 @@ check_dc_plot <- tidy_cpm %>%
   labs(x = "Cell Type", y = "log(CPM)", fill = "Chromosome") + #add sig values between Chrs
   stat_compare_means( aes(label = ..p.signif..), 
                       label.x = 1.5, label.y = 20) + 
-  theme_classic() + scale_fill_brewer(palette = 'Set2') 
+  theme_classic() + scale_fill_brewer(palette = 'Set2') + 
+  facet_wrap(~treatment)
 
 
 ggsave("plots/dosage_compensation.pdf", check_dc_plot, width = 10, height = 6)

@@ -15,7 +15,7 @@ run_type = args[2]
 
 Idents(seurat_final) <- seurat_final$celltype
 
-DefaultAssay(seurat_integrated_ss) <- "RNA"
+DefaultAssay(seurat_final) <- "RNA"
 Idents(seurat_final) <- seurat_final$celltype
 
 keep_clusters <- c("GSC/Spermatogonia", "Primary Spermatocytes", "Spermatocytes", "Secondary Spermatocytes", "Spermatids")
