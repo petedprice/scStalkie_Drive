@@ -165,7 +165,8 @@ check_dc_plot <- tidy_cpm %>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic \ncyst", 
                                                 "Post-meiotic \ncyst", "GSC/Spermatogonia", 
                                                 "Primary Spermatocytes", "Secondary Spermatocytes", 
-                                                "Spermatids"))) %>%
+                                                "Spermatids"))) %>% 
+  filter(treatment == "ST") %>%
   filter(Chr != 'Mito') %>% 
   group_by(celltype, genes, Chr, treatment) %>% 
   summarise(logcpm = mean(logcpm)) %>% 
@@ -175,12 +176,13 @@ check_dc_plot <- tidy_cpm %>%
   stat_compare_means( aes(label = ..p.signif..), 
                       label.x = 1.5, label.y = 20) + 
   theme_classic() + scale_fill_brewer(palette = 'Set2') + 
-  facet_wrap(~treatment)
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
 
+ggsave("plots/ST_dosage_compensation.pdf", check_dc_plot, width = 10, height = 6)
 
-ggsave("plots/dosage_compensation.pdf", check_dc_plot, width = 10, height = 6)
 
 ################################################################################
+
 
 
 
@@ -207,6 +209,14 @@ ggarrange(plotlist = Volcanos, common.legend = T)
 dev.off()
 
 ################################################################################
+
+
+
+
+
+
+
+
 
 
 
@@ -260,6 +270,15 @@ ggarrange(DGE_chisq_plot, dif_exp_figure, ncol = 1, heights = c(2, 1), common.le
 ggsave("plots/DGE_chisq_plot.pdf", width = 15, height = 20, units = "cm")
 
 ################################################################################
+
+
+
+
+
+
+
+
+
 
 
 
