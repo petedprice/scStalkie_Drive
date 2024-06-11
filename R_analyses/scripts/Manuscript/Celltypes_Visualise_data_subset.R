@@ -188,23 +188,23 @@ rm_spermatid_cells <- c("sr5_AACAGGGGTAATGCTC-1", "sr5_AATGAAGCAAATGCTC-1", "sr5
                         "sr5_TGCATCCAGCGACTTT-1", "sr5_TGCTTGCTCCGTATGA-1", "sr5_TGTCAGAGTATCAGGG-1", "st1_GGGTGAATCCGTTGGG-1",
                         "st2_AGGCCACGTCGAATTC-1", "st3_AGGCCACTCTGCTTTA-1", "st3_ATGCGATCAAGCGCTC-1", "sr3_TTGCGTCAGCGGATCA-1")
 
-seurat_integrated_ss <- subset(seurat_integrated_ss, cells = rm_spermatid_cells, invert = TRUE)
+seurat_final <- subset(seurat_integrated_ss, cells = rm_spermatid_cells, invert = TRUE)
 #########################################
 
 
-Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
-seurat_integrated_ss@meta.data$celltype <- factor(seurat_integrated_ss@meta.data$celltype, 
+Idents(seurat_final) <- seurat_final$celltype
+seurat_final@meta.data$celltype <- factor(seurat_final@meta.data$celltype, 
                                                   levels = c("Muscle", "Pre-meiotic \ncyst", "Post-meiotic \ncyst", 
                                                              "GSC/Spermatogonia", "Primary Spermatocytes", 
                                                              "Secondary Spermatocytes", "Spermatids"))
   
 
 
-levels(seurat_integrated_ss) <- c("Muscle", "Pre-meiotic \ncyst", "Post-meiotic \ncyst", 
+levels(seurat_final) <- c("Muscle", "Pre-meiotic \ncyst", "Post-meiotic \ncyst", 
                                   "GSC/Spermatogonia", "Primary Spermatocytes", 
                                   "Secondary Spermatocytes", "Spermatids")
 
-dps_all_figure <- DotPlot(seurat_integrated_ss, features = names(main_figure_markers), assay = "RNA")+coord_flip() +
+dps_all_figure <- DotPlot(seurat_final, features = names(main_figure_markers), assay = "RNA")+coord_flip() +
   scale_x_discrete(labels = as.vector((main_figure_markers))) + 
   labs(y = "Cell type", x = "Genes") + 
   theme_classic() + 
@@ -213,7 +213,7 @@ dps_all_figure <- DotPlot(seurat_integrated_ss, features = names(main_figure_mar
 
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-nfeatures_figure <- seurat_integrated_ss@meta.data %>% 
+nfeatures_figure <- seurat_final@meta.data %>% 
   ggplot(aes(x = celltype, y = nFeature_RNA, fill = celltype)) +
   geom_boxplot() + 
   theme_classic() + scale_fill_manual(values= cbPalette) + labs(
@@ -223,7 +223,7 @@ nfeatures_figure <- seurat_integrated_ss@meta.data %>%
  # theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 
-UMAP <- DimPlot(seurat_integrated_ss, cols = cbPalette) + 
+UMAP <- DimPlot(seurat_final, cols = cbPalette) + 
   labs(x = "UMAP 1", y = "UMAP 2")
 
 #Arrange UMAP, Dotplot and nfeatures_figure with UMAP as first row and twice the height of the other two plots 
@@ -242,8 +242,7 @@ ggarrange(UMAP, ggarrange(dps_all_figure, nfeatures_figure, ncol = 2, labels = c
 
 
 
-
-
+save(seurat_final, file = "data/RData/seurat_final.RData")
 
 
 
