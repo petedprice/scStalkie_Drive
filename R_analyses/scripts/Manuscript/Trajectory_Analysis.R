@@ -1,3 +1,4 @@
+########################## DATA AND PACKAGES ################################### 
 library(Seurat)
 library(tidyverse)
 library(ggpubr)
@@ -10,8 +11,16 @@ library(pheatmap)
 
 load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_ss.RData")
 load("data/trajectory/sce_GAMed.RData")
-sce_trad <- sce
-################################################
+
+ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
+ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
+  ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
+
+################################################################################
+
+
+
+########################## TRADESEQ ############################################
 
 rowData(sce_trad)$assocRes <- associationTest(sce_trad, lineages = T, l2fc = log2(0.5))
 assocRes <- rowData(sce_trad)$assocRes
@@ -25,15 +34,7 @@ bias_genes <-  rownames(assocRes)[
   which(p.adjust(assocRes$pvalue_lineage1_conditionSR, "fdr") <= 0.05)
 ]
 
-yhatSmooth <- predictSmooth(sce_trad, gene = c("gene-9128"), nPoints = 50, tidy = FALSE)
-yhatSmooth <- yhatSmooth[is.na(yhatSmooth[,1]) == FALSE,]
-heatSmooth <- pheatmap(t(scale(t(yhatSmooth[1:50]))),
-                       cluster_cols = FALSE,
-                       show_rownames = T, 
-                       show_colnames = T)
-
-
-condRes <- conditionTest(sce, l2fc = log2(2))
+condRes <- conditionTest(sce_trad, l2fc = log2(2))
 condRes$padj <- p.adjust(condRes$pvalue, "fdr")
 mean(condRes$padj <= 0.05, na.rm = TRUE)
 sum(condRes$padj <= 0.05, na.rm = TRUE)
@@ -48,42 +49,70 @@ plotSmoothers(sce_trad, assays(sce_trad)$counts,
               gene = rownames(assays(sce_trad)$counts)[oo[1]],
               alpha = 1, border = TRUE)
 
-################# del
-plotSmoothers(sce_trad, assays(sce)$counts,
-              gene = 'PB.370',
-              alpha = 1, border = TRUE)
-################
-
 # least significant gene
 plotSmoothers(sce_trad, assays(sce_trad)$counts,
               gene = rownames(assays(sce_trad)$counts)[oo[nrow(sce_trad)]],
               alpha = 1, border = TRUE)
 
 
-#################################################
-Muscle <- c(17)
-Spermatocytes <- c(10,11,13)
-Spermatids <- c(3,4)
-`GSC/Spermatogonia` <- c(0,2,7)
-Pre_meiotic_cyst <- c(5,12,14,15)
-Post_meiotic_cyst <- c(1,6,8,9,16)
+##################### MARKER GENES ---------------------------
+# Look at trajectory of key marker genes for figure of in manuscript, these are 
+# bb8 (gene_9679, g10101), vasa (PB.762), twe (PB.1956), and cup gene collection (STRG.2391)
 
-### Plotting key markers against numbered cell clusters for assignment ---
+# bb8
+bb8 <- plotSmoothers(sce_trad, assays(sce_trad)$counts,
+              gene = "gene-9679",
+              alpha = 1, border = TRUE) + 
+  labs(title = "bb8", x = "")
+vas <- plotSmoothers(sce_trad, assays(sce_trad)$counts,
+              gene = "PB.762",
+              alpha = 1, border = TRUE) + 
+  labs(title = "vasa", x = "")
+twe <- plotSmoothers(sce_trad, assays(sce_trad)$counts,
+              gene = "PB.1956",
+              alpha = 1, border = TRUE) + 
+  labs(title = "twe")
+cup <- plotSmoothers(sce_trad, assays(sce_trad)$counts,
+              gene = "STRG.2391",
+              alpha = 1, border = TRUE) + 
+  labs(title = "cup genes")
 
-seurat_integrated_ss@meta.data$celltype <- 'NA'
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Muscle] <- "Muscle"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Spermatocytes] <- "Spermatocytes"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Spermatids] <- "Spermatids"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% `GSC/Spermatogonia`] <- "GSC & Spermatogonia"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Pre_meiotic_cyst] <- "Pre-meiotic \ncyst"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Post_meiotic_cyst] <- "Post-meiotic \ncyst"
-seurat_integrated_ss$treatment <- "SR"
-seurat_integrated_ss$treatment[grep("st", seurat_integrated_ss$sample)] <- "ST"
-Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
+Fest <- plotSmoothers(sce_trad, assays(sce_trad)$counts,
+              gene = "STRG.7827",
+              alpha = 1, border = TRUE) + 
+  labs(title = "Fest")
+CycB <- plotSmoothers(sce_trad, assays(sce_trad)$counts,
+              gene = "PB.4546",
+              alpha = 1, border = TRUE) + 
+  labs(title = "CycB")
 
-DefaultAssay(seurat_integrated_ss) <- "integrated"
-ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
-ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
+pt_data <- data.frame(pseudotime = sce$slingPseudotime_1, celltype = sce$celltype)
+pt_data$celltype <- factor(pt_data$celltype, levels = c("GSC & Spermatogonia", "Spermatocytes", "Spermatids"))
+pseudotime_celltypes <- pt_data %>% 
+  filter(celltype %in% c("GSC & Spermatogonia", "Spermatocytes", "Spermatids")) %>%
+  ggplot(., aes(x = pseudotime, y = celltype)) + 
+  geom_boxplot(outlier.alpha = 0) + 
+  labs(x = "Pseudotime", y = "Cell Types") + 
+  theme_bw()
+# plot all together
+Marker_gene_traj <- ggarrange(vas, bb8, twe, cup, Fest, CycB, pseudotime_celltypes,
+                              ncol = 1,
+          common.legend = T, labels = c("A", "B", "C", "D", "E", "F"), align = "hv")
+
+ggsave("plots/Marker_gene_traj.pdf", Marker_gene_traj, width = 10, height = 15)
+
+
+##################### look into ###############
+yhatSmooth <- predictSmooth(sce_trad, gene = c("gene-9128", "PB.370"), nPoints = 50, tidy = FALSE)
+yhatSmooth <- yhatSmooth[is.na(yhatSmooth[,1]) == FALSE,]
+heatSmooth <- pheatmap(t(scale(t(yhatSmooth[1:50]))),
+                       cluster_cols = FALSE,
+                       show_rownames = T, 
+                       show_colnames = T)
+
+
+####################################################
+
 
 
 ########### MAYBE CHANGE? -----------

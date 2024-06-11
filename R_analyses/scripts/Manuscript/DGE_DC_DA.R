@@ -1,5 +1,4 @@
-## based off http://bioconductor.org/books/3.15/OSCA.multisample/multi-sample-comparisons.html#putting-it-all-together
-# load libraries and functions
+################# load libraries and functions and data prep ###################
 library(dplyr)
 library(Seurat)
 library(openxlsx)
@@ -28,8 +27,6 @@ Spermatids <- c(3,4)
 Pre_meiotic_cyst <- c(5,12,14,15)
 Post_meiotic_cyst <- c(1,6,8,9,16)
 
-### Plotting key markers against numbered cell clusters for assignment ---
-
 seurat_integrated_ss@meta.data$celltype <- 'NA'
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Muscle] <- "Muscle"
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Spermatocytes] <- "Spermatocytes"
@@ -43,12 +40,16 @@ Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
 
 DefaultAssay(seurat_integrated_ss) <- "integrated"
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
+ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
+  ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
 
-ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
+sce <- seurat_integrated_ss %>% as.SingleCellExperiment(assay = "RNA")
+
+################################################################################
 
 
-##### BIOCONDUCTOR EDGER2 -----
-## PLOT FUNCTION ---- 
+
+####################### PLOT PCAS and DGE FUNCTION #############################
 make_pca_function <- function(x, ortholog_table){
   md <- metadata(x)
   mds_data <- md$y %>% 
@@ -97,11 +98,11 @@ make_pca_function <- function(x, ortholog_table){
   
 }
 
-sce <- #subset(seurat_integrated, celltype != 'Unknown') %>% 
-  seurat_integrated_ss %>% as.SingleCellExperiment(assay = "RNA")
+################################################################################
 
 
-#### BULK RNASEQ ACROSS WHOLE TISSUE ----
+
+############################ BULK RNASEQ ACROSS WHOLE TISSUE ###################
 whole_tissue <- aggregateAcrossCells(sce, id=colData(sce)[,c("sample")])
 de.results_wt <- pseudoBulkDGE(whole_tissue, 
                                label='bulk',
@@ -113,16 +114,23 @@ metadata(de.results_wt$bulk)$y$samples$celltype <- "bulk"
 
 bulk_DEG_output <- make_pca_function(de.results_wt$bulk, ortholog_table)
 
+################################################################################
 
 
-### PSEUDOBULK INDIVIDUAL CELL TYPES ----
+
+######################## PSEUDOBULK INDIVIDUAL CELL TYPES ######################
 agg_cell_types <- aggregateAcrossCells(sce, id=colData(sce)[,c("celltype", "sample")])
 agg_cell_types <- agg_cell_types[,agg_cell_types$ncells >= 10]
-
 y <- DGEList(counts(agg_cell_types), samples=colData(agg_cell_types))
-keep <- filterByExpr(y, group=agg_cell_types$treatment)
+
+design <- model.matrix(~agg_cell_types$treatment+agg_cell_types$celltype)
+keep <- filterByExpr(y, design=design)
 y <- y[keep,]
-mds_data <-edgeR::cpm(y, log = TRUE) %>% 
+y <- calcNormFactors(y)
+y <- estimateDisp(y, design)
+cpm <- edgeR::cpm(y, log=T) %>% as.data.frame()
+
+mds_data <-cpm %>% 
   plotMDS()
 plot <- data.frame(x = mds_data$x, 
                    y = mds_data$y, 
@@ -137,6 +145,58 @@ pdf("plots/PCA_pseudobulk_ind_cell_types.pdf")
 plot 
 dev.off()
 
+
+################################################################################
+
+
+
+
+########################## DOSAGE COMPENSATION PLOTS ---------------------------
+
+raw_counts <- y$counts %>% as.data.frame()
+cpm$genes <- rownames(cpm)
+raw_counts$genes <- rownames(raw_counts)
+
+cols <- c("treatment", "celltype", "sample")
+tidy_cpm <- cpm %>% as.data.frame %>% 
+  pivot_longer(cols = colnames(cpm)[1:(length(colnames(cpm))-1)], 
+               names_to = "sample", values_to = "logcpm") %>% 
+  merge(y$samples[,cols], by.x = "sample", by.y = 0) %>% 
+  rename(edgeRsample = sample,  sample = sample.y) %>% 
+  mutate(Chr = ifelse(genes %in% Xgenes, "X", "A")) %>% 
+  mutate(Chr = ifelse(!(genes %in% c(Xgenes, Agenes)), "Mito", Chr))
+
+tidy_raw_counts <- raw_counts %>% as.data.frame %>% 
+  pivot_longer(cols = colnames(raw_counts)[1:(length(colnames(raw_counts))-1)], 
+               names_to = "sample", values_to = "raw_counts") %>% 
+  merge(y$samples[,cols], by.x = "sample", by.y = 0) %>% 
+  rename(edgeRsample = sample,  sample = sample.y) %>% 
+  mutate(Chr = ifelse(genes %in% Xgenes, "X", "A")) %>% 
+  mutate(Chr = ifelse(!(genes %in% c(Xgenes, Agenes)), "Mito", Chr))
+
+check_dc_plot <- tidy_cpm %>% 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic \ncyst", 
+                                                "Post-meiotic \ncyst", "GSC & Spermatogonia", 
+                                                "Spermatocytes", "Spermatids"))) %>%
+  filter(Chr != 'Mito') %>% 
+  group_by(celltype, genes, Chr, treatment) %>% 
+  summarise(logcpm = mean(logcpm)) %>% 
+  mutate(Chromosome = Chr) %>% 
+  ggplot(aes(x = celltype, y = logcpm, fill = Chromosome)) + geom_boxplot(outlier.alpha = 0.2) + 
+  labs(x = "Cell Type", y = "log(CPM)", fill = "Chromosome") + #add sig values between Chrs
+  stat_compare_means( aes(label = ..p.signif..), 
+                      label.x = 1.5, label.y = 20) + 
+  theme_classic() + scale_fill_brewer(palette = 'Set2') 
+
+
+ggsave("plots/dosage_compensation.pdf", check_dc_plot, width = 10, height = 6)
+
+################################################################################
+
+
+
+############################## CELLTYPE DGE ------------------------------------
+
 de.results_act <- pseudoBulkDGE(agg_cell_types, 
                                 label=agg_cell_types$celltype,
                                 condition = agg_cell_types$treatment,
@@ -149,17 +209,19 @@ cell_type_DEG_output <- lapply(de.results_act, make_pca_function, ortholog_table
 PCAs <- lapply(cell_type_DEG_output, function(x)(return(x$PCA)))
 Volcanos <- lapply(cell_type_DEG_output, function(x)(return(x$Volcano)))
 
-
-
 pdf("plots/PCA_compiled.pdf", width = 14, height = 10)
 ggarrange(plotlist =  PCAs, common.legend = T)
 dev.off()
-
 
 pdf("plots/Volcanos_compiled.pdf", width = 20, height = 15)
 ggarrange(plotlist = Volcanos, common.legend = T)
 dev.off()
 
+################################################################################
+
+
+
+######################## CHISQUARED ENRICHMENT FIGURE ##########################
 
 dif_exp_data <- lapply(cell_type_DEG_output, function(x)(return(x$all))) %>% 
   bind_rows()
@@ -172,7 +234,6 @@ dif_exp_figure <- dif_exp_data %>%
   ggplot(aes(x = celltype, fill = Significant)) + geom_bar(position = 'dodge') + 
   theme_classic() + scale_fill_brewer(palette = 'Set2') + labs(y = "Number of DEGs", 
                                                                x = 'Cell Type')
-
 
 
 csq_chr_func <- function(x){
@@ -209,7 +270,11 @@ ggarrange(DGE_chisq_plot, dif_exp_figure, ncol = 1, heights = c(2, 1), common.le
           labels = c("A", "B"), legend = "bottom")
 ggsave("plots/DGE_chisq_plot.pdf", width = 15, height = 20, units = "cm")
 
-###################################################
+################################################################################
+
+
+
+
 ########## DELETE ---------
 
 #### CHECK CELLTYPE ABUNDANCE DIFFERENCES ----

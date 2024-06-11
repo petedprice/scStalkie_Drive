@@ -30,6 +30,15 @@ seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% P
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Post_meiotic_cyst] <- "Post-meiotic \ncyst"
 seurat_integrated_ss$treatment <- "SR"
 seurat_integrated_ss$treatment[grep("st", seurat_integrated_ss$sample)] <- "ST"
+rm_spermatid_cells <- c("sr5_AACAGGGGTAATGCTC-1", "sr5_AATGAAGCAAATGCTC-1", "sr5_AATGCCACAATGACCT-1", "sr5_AGCCACGCATCGTGGC-1",
+                        "sr5_ATCACAGTCCTTCAGC-1", "sr5_ATCATTCTCGTGCACG-1", "sr5_CCCTAACCAACGCATT-1", "sr5_CTCATGCCACTGGATT-1",
+                        "sr5_GCGGAAACAGAACATA-1", "sr5_GGACGTCTCTCGACGG-1", "sr5_GTGCTTCCACACGCCA-1", "sr5_TATCGCCGTCTCCTGT-1",
+                        "sr5_TGCATCCAGCGACTTT-1", "sr5_TGCTTGCTCCGTATGA-1", "sr5_TGTCAGAGTATCAGGG-1", "st1_GGGTGAATCCGTTGGG-1",
+                        "st2_AGGCCACGTCGAATTC-1", "st3_AGGCCACTCTGCTTTA-1", "st3_ATGCGATCAAGCGCTC-1", "sr3_TTGCGTCAGCGGATCA-1")
+
+seurat_integrated_ss <- subset(seurat_integrated_ss, cells = rm_spermatid_cells, invert = TRUE)
+
+
 Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
 
 DefaultAssay(seurat_integrated_ss) <- "RNA"

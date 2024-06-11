@@ -7,59 +7,64 @@ library(ggpubr)
 library(clustree)
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 
+recluster=FALSE
 
-load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_celltype.RData")
-
-######################## RE Run but REMOVE CLUSTERS -----------
-
-
-Idents(seurat_integrated) <- seurat_integrated$celltype
-seurat_integrated_ss <- subset(seurat_integrated, idents = c("TBC", "Cyst", "GSC/Spermatogonia", "Spermatid", "Spermatocyte", "Muscle"))
-DefaultAssay(seurat_integrated_ss) <- "integrated"
-
-######### Determining number of PCAs to use for clustering/UMAP etc.
-EP <- ElbowPlot(seurat_integrated_ss, ndims = 40)
-pct <- seurat_integrated_ss[["pca"]]@stdev / sum(seurat_integrated_ss[["pca"]]@stdev) * 100
-# Calculate cumulative percents for each PC
-cumu <- cumsum(pct)
-
-# Determine which PC exhibits cumulative percent greater than 90% and % variation associated with the PC as less than 5
-co1 <- which(cumu > 90 & pct < 5)[1]
-
-# Determine the difference between variation of PC and subsequent PC
-co2 <- sort(which((pct[1:length(pct) - 1] - pct[2:length(pct)]) > 0.1), decreasing = T)[1] + 1
-
-# last point where change of % of variation is more than 0.1%.
-pcs <- min(co1, co2)
-pcs
-seurat_integrated_ss <- RunUMAP(seurat_integrated_ss, dims = 1:pcs)
-seurat_integrated_ss <- RunPCA(seurat_integrated_ss, dims = 1:pcs)
-
-
-######### Determining resolution to use --------
-seurat_integrated_ss <- FindNeighbors(object=seurat_integrated_ss, dims=1:pcs)
-seurat_integrated_ss <- FindClusters(object=seurat_integrated_ss, resolution = c(0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 
-                                                                                 0.75, 1, 1.25, 1.5, 1.75, 2, 
-                                                                                 2.5, 3))
-clusttree <- clustree(seurat_integrated_ss)
-CT <- plot(clusttree)
-CT_noclusters <- clusttree$data %>% 
-  group_by(integrated_snn_res.) %>% 
-  summarise(no_clusters = n_distinct(cluster)) %>% 
-  rename(resolution = integrated_snn_res.) %>%
-  ggplot(aes(x = resolution, y = no_clusters)) +
-  geom_point()
-
-
-clustering_plots <- ggarrange(EP, CT, CT_noclusters, ncol = 1, nrow = 3)
-ggsave("plots/clustering_plots_ss.pdf", clustering_plots, height = 30, width = 30)
-ggsave("plots/clustering_plots_ss.png", clustering_plots, height = 30, width = 30)
-
-res <- 'integrated_snn_res.0.4'
-Idents(seurat_integrated_ss) <- res
-
-save(seurat_integrated_ss, file = 'data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_ss.RData')
-
+ if (recluster == TRUE){
+  load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_celltype.RData")
+  
+  ######################## RE Run but REMOVE CLUSTERS -----------
+  
+  
+  Idents(seurat_integrated) <- seurat_integrated$celltype
+  seurat_integrated_ss <- subset(seurat_integrated, idents = c("TBC", "Cyst", "GSC/Spermatogonia", "Spermatid", "Spermatocyte", "Muscle"))
+  DefaultAssay(seurat_integrated_ss) <- "integrated"
+  
+  ######### Determining number of PCAs to use for clustering/UMAP etc.
+  EP <- ElbowPlot(seurat_integrated_ss, ndims = 40)
+  pct <- seurat_integrated_ss[["pca"]]@stdev / sum(seurat_integrated_ss[["pca"]]@stdev) * 100
+  # Calculate cumulative percents for each PC
+  cumu <- cumsum(pct)
+  
+  # Determine which PC exhibits cumulative percent greater than 90% and % variation associated with the PC as less than 5
+  co1 <- which(cumu > 90 & pct < 5)[1]
+  
+  # Determine the difference between variation of PC and subsequent PC
+  co2 <- sort(which((pct[1:length(pct) - 1] - pct[2:length(pct)]) > 0.1), decreasing = T)[1] + 1
+  
+  # last point where change of % of variation is more than 0.1%.
+  pcs <- min(co1, co2)
+  pcs
+  seurat_integrated_ss <- RunUMAP(seurat_integrated_ss, dims = 1:pcs)
+  seurat_integrated_ss <- RunPCA(seurat_integrated_ss, dims = 1:pcs)
+  
+  
+  ######### Determining resolution to use --------
+  seurat_integrated_ss <- FindNeighbors(object=seurat_integrated_ss, dims=1:pcs)
+  seurat_integrated_ss <- FindClusters(object=seurat_integrated_ss, resolution = c(0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 
+                                                                                   0.75, 1, 1.25, 1.5, 1.75, 2, 
+                                                                                   2.5, 3))
+  clusttree <- clustree(seurat_integrated_ss)
+  CT <- plot(clusttree)
+  CT_noclusters <- clusttree$data %>% 
+    group_by(integrated_snn_res.) %>% 
+    summarise(no_clusters = n_distinct(cluster)) %>% 
+    rename(resolution = integrated_snn_res.) %>%
+    ggplot(aes(x = resolution, y = no_clusters)) +
+    geom_point()
+  
+  
+  clustering_plots <- ggarrange(EP, CT, CT_noclusters, ncol = 1, nrow = 3)
+  ggsave("plots/clustering_plots_ss.pdf", clustering_plots, height = 30, width = 30)
+  ggsave("plots/clustering_plots_ss.png", clustering_plots, height = 30, width = 30)
+  
+  res <- 'integrated_snn_res.0.4'
+  Idents(seurat_integrated_ss) <- res
+  
+  
+  save(seurat_integrated_ss, file = 'data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_ss.RData')
+ } else {
+  load('data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_ss.RData')
+}
 
 ######### VISUALISING MARKER GENES ------
 DefaultAssay(seurat_integrated_ss) <- "RNA"
@@ -138,7 +143,7 @@ main_figure_markers <- markers$T.dal.Ortholog[markers$Key.Marker == "Yes"] %>%
   strsplit(",") %>% unlist() %>% 
   lapply(., function(x)(grep(x, new_names))) %>% unlist() %>% 
   new_names[.] %>% 
-  .[c(10,1,5,9,3,4,6,2,8)]
+  .[c(14,3,1,5,13,4,8,9,2,6,12)]
 main_figure_markers <- factor(main_figure_markers, levels = rev(main_figure_markers))
 
 Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
@@ -159,41 +164,89 @@ ggarrange(dps_all_figure, UMAP, ncol = 2) %>%
 #--------------------------------------------------------------------------
 
 Muscle <- c(17)
-Spermatocytes <- c(10,11,13)
+Primary_Spermatocytes <- c(10)
+Secondary_Spermatocytes <- c(11,13)
 Spermatids <- c(3,4)
 `GSC/Spermatogonia` <- c(0,2,7)
 Pre_meiotic_cyst <- c(5,12,14,15)
 Post_meiotic_cyst <- c(1,6,8,9,16)
 
-### Plotting key markers against numbered cell clusters for assignment ---
-
 seurat_integrated_ss@meta.data$celltype <- 'NA'
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Muscle] <- "Muscle"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Spermatocytes] <- "Spermatocytes"
+seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Primary_Spermatocytes] <- "Primary Spermatocytes"
+seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Secondary_Spermatocytes] <- "Secondary Spermatocytes"
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Spermatids] <- "Spermatids"
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% `GSC/Spermatogonia`] <- "GSC/Spermatogonia"
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Pre_meiotic_cyst] <- "Pre-meiotic \ncyst"
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Post_meiotic_cyst] <- "Post-meiotic \ncyst"
 
+
+######## REMOVE STRAGGLER CELLS ---------
+rm_spermatid_cells <- c("sr5_AACAGGGGTAATGCTC-1", "sr5_AATGAAGCAAATGCTC-1", "sr5_AATGCCACAATGACCT-1", "sr5_AGCCACGCATCGTGGC-1",
+                        "sr5_ATCACAGTCCTTCAGC-1", "sr5_ATCATTCTCGTGCACG-1", "sr5_CCCTAACCAACGCATT-1", "sr5_CTCATGCCACTGGATT-1",
+                        "sr5_GCGGAAACAGAACATA-1", "sr5_GGACGTCTCTCGACGG-1", "sr5_GTGCTTCCACACGCCA-1", "sr5_TATCGCCGTCTCCTGT-1",
+                        "sr5_TGCATCCAGCGACTTT-1", "sr5_TGCTTGCTCCGTATGA-1", "sr5_TGTCAGAGTATCAGGG-1", "st1_GGGTGAATCCGTTGGG-1",
+                        "st2_AGGCCACGTCGAATTC-1", "st3_AGGCCACTCTGCTTTA-1", "st3_ATGCGATCAAGCGCTC-1", "sr3_TTGCGTCAGCGGATCA-1")
+
+seurat_integrated_ss <- subset(seurat_integrated_ss, cells = rm_spermatid_cells, invert = TRUE)
+#########################################
+
+
 Idents(seurat_integrated_ss) <- seurat_integrated_ss$celltype
+seurat_integrated_ss@meta.data$celltype <- factor(seurat_integrated_ss@meta.data$celltype, 
+                                                  levels = c("Muscle", "Pre-meiotic \ncyst", "Post-meiotic \ncyst", 
+                                                             "GSC/Spermatogonia", "Primary Spermatocytes", 
+                                                             "Secondary Spermatocytes", "Spermatids"))
+  
+
+
+levels(seurat_integrated_ss) <- c("Muscle", "Pre-meiotic \ncyst", "Post-meiotic \ncyst", 
+                                  "GSC/Spermatogonia", "Primary Spermatocytes", 
+                                  "Secondary Spermatocytes", "Spermatids")
+
 dps_all_figure <- DotPlot(seurat_integrated_ss, features = names(main_figure_markers), assay = "RNA")+coord_flip() +
-  scale_x_discrete(labels = as.vector((main_figure_markers)))
-dps_all_figure
+  scale_x_discrete(labels = as.vector((main_figure_markers))) + 
+  labs(y = "Cell type", x = "Genes") + 
+  theme_classic() + 
+  scale_colour_gradientn(colours = colorspace::diverge_hcl(8)) + 
+  theme(legend.position="right")
+
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
 nfeatures_figure <- seurat_integrated_ss@meta.data %>% 
   ggplot(aes(x = celltype, y = nFeature_RNA, fill = celltype)) +
   geom_boxplot() + 
-  theme_bw() + scale_fill_discrete(name = "Celltype") + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-UMAP <- DimPlot(seurat_integrated_ss, label = T) + 
+  theme_classic() + scale_fill_manual(values= cbPalette) + labs(
+    x = "Cell type", y = "Number of features detected") + 
+  theme(legend.position="none")
+
+ # theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+UMAP <- DimPlot(seurat_integrated_ss, cols = cbPalette) + 
   labs(x = "UMAP 1", y = "UMAP 2")
 
-
 #Arrange UMAP, Dotplot and nfeatures_figure with UMAP as first row and twice the height of the other two plots 
-ggarrange(UMAP, ggarrange(dps_all_figure, nfeatures_figure, ncol = 2, labels = c("B", "C")), ncol = 1, nrow = 2, heights = c(3,3), labels = c("A")) %>% 
-  ggsave( "plots/subset_celltype_key_markers.pdf", ., width = 25, height = 20)
+ggarrange(dps_all_figure, nfeatures_figure, ncol = 2, labels = c("A", "B"),
+          widths = c(6,4)) %>% 
+  ggsave( "plots/subset_celltype_key_markers.pdf", ., width = 18, height = 4)
 
-ggarrange(UMAP, dps_all_figure, ncol = 2, nrow = 1, widths = c(4,5)) %>% 
-  ggsave( "plots/subset_celltype_key_markers.pdf", ., width = 25, height = 10)
+UMAP %>% 
+  ggsave("plots/UMAP_subset_celltype_key_markers.pdf", ., width = 10, height = 8) 
+
+
+ggarrange(UMAP, ggarrange(dps_all_figure, nfeatures_figure, ncol = 2, labels = c("B", "C"),
+                          widths = c(6,4)), nrow = 2, heights = c(2.2, 1), labels = "A") %>% 
+  ggsave("plots/MarkersUMAPFeatures.pdf", ., width = 24, height = 13)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -216,6 +269,9 @@ ggsave("plots/no_genes_plots.png", no_genes_plots_arranged, height = 13, width =
 no_genes_featplots <- FeaturePlot(seurat_integrated, features = c("nFeature_RNA", "nCount_RNA", "log10GenesPerUMI"), pt.size = 0.5, split.by = 'treatment')
 no_genes_featplots <- no_genes_featplots & theme(legend.position = c(0.1,0.2))
 ggsave("plots/no_genes_featplots.png", no_genes_featplots, height = 10, width = 15)
+
+
+
 
 ######### ADDITIONAL CELLTYPE ASSIGNMENT USING X GENES EXPRESSED -----
 Xgenes <- filter(ortholog_table, chr == "Chr_X") %>% 
@@ -256,7 +312,7 @@ data_info[[3]] <- seurat_integrated@meta.data %>%
   ggplot(aes(x = integrated_snn_res.0.4, fill = treatment, y = nCount_SCT)) + 
   geom_boxplot()
 data_info[[4]] <- seurat_integrated@meta.data %>% 
-  ggplot(aes(x = integrated_snn_res.0.4, fill = treatment, y = xprop)) + 
+  ggplot(aes(x = integrated_snn_res.0.4, fill = treatment, y = Xprop)) + 
   geom_boxplot()
 ggpubr::ggarrange(plotlist = data_info, ncol = 2, nrow = 2, labels = c(1:4))
 ggsave("plots/expression_info.pdf", height = 20, width = 30)
