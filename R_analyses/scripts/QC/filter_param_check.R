@@ -4,7 +4,7 @@ library(ggpubr)
 library(ggExtra)
 library(patchwork)
 
-seur_objs <- list.files("indata/RData/param_checks/", full.names = TRUE, pattern = "seurat")
+seur_objs <- list.files("data/RData/param_checks/", full.names = TRUE, pattern = "seurat")
 
 check_values_function <- function(obj, plot = F){
   outdata <- list()
@@ -72,10 +72,10 @@ mito_against_gu_plots[[3]] <- ggMarginal(mito_against_gu_plots[[3]],
                                          groupColour = T, groupFill = T)
 
 mito_against_gu_plots[[4]] <- allplots$
-  `indata/RData/param_checks//integrated_seurat_nf100_mtr1_gu0.RData`$
+  `data/RData/param_checks//integrated_seurat_nf100_mtr1_gu0.RData`$
   FeaturePlots$mitoRatio
 mito_against_gu_plots[[5]] <- allplots$
-  `indata/RData/param_checks//integrated_seurat_nf100_mtr1_gu0.RData`$
+  `data/RData/param_checks//integrated_seurat_nf100_mtr1_gu0.RData`$
   FeaturePlots$log10GenesPerUMI
 
 
@@ -85,7 +85,7 @@ mito_against_gu_plots[[7]] <- metadata %>% filter(featurefilter == 100, mitofilt
   ggplot(aes(y = log10GenesPerUMI, fill = treatment,  x = celltype)) + geom_boxplot() #add density plots onto x and y axis
 
 mito_against_gu_plots[[8]] <- allplots$
-  `indata/RData/param_checks//integrated_seurat_nf100_mtr1_gu0.RData`$
+  `data/RData/param_checks//integrated_seurat_nf100_mtr1_gu0.RData`$
   FeaturePlots$DimPlot
 
 
@@ -97,8 +97,8 @@ ggsave("plots/magp_arranged.pdf", magp_arranged, width = 20, height = 20)
 
 
 cellnumbers_plots <- cell_numbers %>% 
-  ggplot(aes(x = mitofilter, y = freq, fill = treatment)) + geom_boxplot() + 
-  facet_wrap(vars(complexityfilter, featurefilter))
+  ggplot(aes(x = as.factor(mitofilter), y = freq, fill = treatment)) + geom_boxplot() + 
+  facet_wrap(~complexityfilter+featurefilter)
 
 cell_numbers_table <- cell_numbers %>% 
   group_by(treatment, mitofilter, complexityfilter, featurefilter) %>%
@@ -110,3 +110,4 @@ cell_numbers_table <- cell_numbers %>%
 
 ggarrange(plotlist = list(cellnumbers_plots, cell_numbers_table), ncol = 2, widths = c(3,3))
 ggsave("plots/cell_numbers.pdf", width = 14, height = 10)
+

@@ -19,9 +19,8 @@ library(ggrepel)
 library(lme4)
 
 
-load("data/RData/seurat_integrated.RData")
-seurat_integrated$celltype
-DefaultAssay(seurat_integrated) <- "RNA"
+load("data/RData/seurat_final.RData")
+DefaultAssay(seurat_final) <- "RNA"
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
@@ -29,14 +28,12 @@ ortholog_table <- ortholog_table %>% group_by(REF_GENE_NAME, OF_DMEL,
                                               FBgnOF, OMA_REFGENE, chr, OMA_CG, 
                                               OMA_DMEL, consensus_gene) %>% 
   summarise(start = min(start), end = max(end))
-ortholog_table$REF_GENE_NAME <- gsub("_", "-", ortholog_table$REF_GENE_NAME)
 
 Xgenes <- gsub("_", "-", filter(ortholog_table, chr == "Chr_X")$REF_GENE_NAME) %>% 
-  intersect(rownames(seurat_integrated))
+  intersect(rownames(seurat_final))
 Agenes <- gsub("_", "-", filter(ortholog_table, chr %in% c("Chr_1", "Chr_2"))$REF_GENE_NAME) %>% 
-  intersect(rownames(seurat_integrated))
-sce <- seurat_integrated %>% as.SingleCellExperiment(assay = "RNA")
-dim(sce[rowSums(counts(sce)>1)>=10,])
+  intersect(rownames(seurat_final))
+sce <- seurat_final %>% as.SingleCellExperiment(assay = "RNA")
 
 ################################################################################
 
@@ -44,39 +41,48 @@ dim(sce[rowSums(counts(sce)>1)>=10,])
 
 ####################### PLOT PCAS and DGE FUNCTION #############################
 make_pca_function <- function(x, ortholog_table){
-  mds_data <- x$logcpm %>% 
+  md <- metadata(x)
+  mds_data <- md$y %>% 
+    edgeR::cpm(log = TRUE) %>% 
     plotMDS()
   
   PCA <- data.frame(x = mds_data$x, 
                     y = mds_data$y, 
-                    names = x$res$samples$seq_folder,
-                    treatment = x$res$samples$treatment) %>% 
+                    names = md$y$samples$seq_folder,
+                    treatment = md$fit$samples$treatment) %>% 
     ggplot(aes(x = x, y = y, fill = names, label = names, colour = treatment))  +
     geom_text(hjust="inward", vjust="inward") +
-    labs(x = "PC2", y = "PC1", title = x$res$samples$celltype[1]) 
-
-  res <- x$toptags$table[is.na(x$toptags$table$logFC) == FALSE,] %>%
+    labs(x = "PC2", y = "PC1", title = md$y$samples$celltype[1]) 
+  #pdf(paste("plots/PCA_", md$y$samples$celltype[1], ".pdf", sep = ""))
+  #print(PCA) 
+  #dev.off()
+  x <- x[is.na(x$logFC) == FALSE,] %>%
     as.data.frame()
-  res$geneID <- rownames(res)
-
-  res <- merge(res, ortholog_table, by.x = 'geneID', by.y = 'REF_GENE_NAME')   
-  top_p <- res$FDR[order(res$FDR)][5]
-  top_p2 <- res$FDR[order(res$FDR)][5]
-  res$celltype = x$res$samples$celltype[1]
-  Volcano <- res %>% 
+  
+  
+  x$geneID <- gsub("-", "_", rownames(x))
+  #assign x$gene using ortholog_table consensus_gene
+  x <- merge(x, ortholog_table, by.x = 'geneID', by.y = 'REF_GENE_NAME')   
+  top_p <- x$FDR[order(x$FDR)][5]
+  top_p2 <- x$FDR[order(x$FDR)][5]
+  x$celltype = md$y$samples$celltype[1]
+  Volcano <- x %>% 
     ggplot(aes(x = logFC, y = -log10(FDR), label = consensus_gene,
                colour = (abs(logFC) > 1 &  FDR < 0.05))) + 
-    geom_point() + geom_text_repel(data=subset(res, FDR < top_p & abs(logFC) > 1),
+    geom_point() + geom_text_repel(data=subset(x, FDR < top_p & abs(logFC) > 1),
                                    aes(logFC,-log10(FDR),label=consensus_gene), 
                                    hjust="inward", vjust="inward") +
     labs(y = "-log10 Pvalue (FDR adjusted)", x = "log2 fold-change", 
-         title = paste(x$res$samples$celltype[1], "(positive is ST bias)"))+ 
+         title = paste(md$y$samples$celltype[1], "(positive is ST bias)"))+ 
     theme(legend.position = "none")  + 
     geom_hline(yintercept = -log10(0.05), color = 'grey', linetype = 'dashed') + 
     geom_vline(xintercept = c(-1,1), color = 'grey', linetype = 'dashed')
-  ST_bias_genes <- filter(res, logFC > 1, FDR < 0.05)
-  SR_bias_genes <- filter(res, logFC < -1, FDR < 0.05)
-  output <- list(PCA,Volcano, ST_bias_genes, SR_bias_genes, res)
+  #pdf(paste("plots/DEG_", md$y$samples$celltype[1], ".pdf", sep = ""))
+  #print(Volcano) 
+  #dev.off()
+  ST_bias_genes <- filter(x, logFC > 1, FDR < 0.05)
+  SR_bias_genes <- filter(x, logFC < -1, FDR < 0.05)
+  output <- list(PCA,Volcano, ST_bias_genes, SR_bias_genes, x)
   names(output) <- c("PCA", "Volcano", "ST_bias", "SR_bias", "all")
   return(output)
   
@@ -84,22 +90,37 @@ make_pca_function <- function(x, ortholog_table){
 
 ################################################################################
 
+#keep <-  names(which(rowSums(counts(sce) > 2)  > 1))
+keep <- rownames(counts(sce))
+
+############################ BULK RNASEQ ACROSS WHOLE TISSUE ###################
+whole_tissue <- aggregateAcrossCells(sce, subset.row = keep, id=colData(sce)[,c("sample")])
+de.results_wt <- pseudoBulkDGE(whole_tissue, 
+                               label='bulk',
+                               condition = whole_tissue$treatment,
+                               design=~treatment,
+                               coef = "treatmentST",
+)
+metadata(de.results_wt$bulk)$y$samples$celltype <- "bulk"
+
+bulk_DEG_output <- make_pca_function(de.results_wt$bulk, ortholog_table)
+
+################################################################################
+
 
 ######################## PSEUDOBULK INDIVIDUAL CELL TYPES ######################
-agg_cell_types <- aggregateAcrossCells(sce, id=colData(sce)[,c("celltype", "sample")])
+agg_cell_types <- aggregateAcrossCells(sce, subset.row = keep, id=colData(sce)[,c("celltype", "sample")])
 agg_cell_types <- agg_cell_types[,agg_cell_types$ncells >= 10]
 y <- DGEList(counts(agg_cell_types), samples=colData(agg_cell_types))
 design <- model.matrix(~0 + treatment + celltype, data = agg_cell_types@colData)
 
-
-keep <- filterByExpr(y, group = paste0(y$samples$celltype, y$samples$treatment), 
-                     large.n = 3, min.prop = 0.49, min.count = 5)
-
+#keep1 <- filterByExpr(y, design=design)
+keep <- filterByExpr(y, group = paste0(y$samples$celltype, y$samples$treatment))
 y <- y[keep,]
 y <- calcNormFactors(y)
 y <- estimateDisp(y, design)
 cpm <- edgeR::cpm(y, log=T) %>% as.data.frame()
-dim(cpm)
+
 mds_data <-cpm %>% 
   plotMDS()
 plot <- data.frame(x = mds_data$x, 
@@ -120,9 +141,9 @@ dev.off()
 
 
 ## NEW PBDGE FUNCTION 
+sce <- agg_cell_types; label = 'GSC/Spermatogonia'
 
-
-PBDGE <- function(label, sce){
+PBDGE <- function(sce, label){
   dge_data <- sce[,sce$celltype == label]
   y <- DGEList(counts(dge_data), samples=colData(dge_data), group = dge_data$treatment)
   design <- model.matrix(~treatment, y$samples)
@@ -130,14 +151,11 @@ PBDGE <- function(label, sce){
   y <- estimateDisp(y, design)
   cpm <- cpm(y, log = F)
   
-  keep1 <- cpm[,y$samples$treatment== "ST"] >= 2
-  keep1 <- rowSums(keep1) > (ncol(keep1)/2)
-  keep2 <- cpm[,y$samples$treatment== "SR"] >= 2
-  keep2 <- rowSums(keep2) > (ncol(keep2)/2)
+  keep1 <- cpm[,y$samples$treatment== "ST"] > 2
+  keep1 <- rowSums(keep1) >= (ncol(keep1)/2)
+  keep2 <- cpm[,y$samples$treatment== "SR"] > 2
+  keep2 <- rowSums(keep2) >= (ncol(keep2)/2)
   keep <- keep1 | keep2
-  
-  #keep <- filterByExpr(y, group = y$sample$treatment, 
-  #                     large.n = 3, min.prop = 0.5, min.count = 5)
   y <- y[keep,]
   
   STSR <- exactTest(y, pair = c("ST", "SR")) 
@@ -146,9 +164,8 @@ PBDGE <- function(label, sce){
   out <- list()
   out$res <- res
   out$logcpm <- cpm(y, log = T, prior.count = .0001)
-  out$cpm <- cpm(y, log = F)
   out$toptags <- topTags(res, n = nrow(res))
-  out$exacttest <- topTags(STSR, n = nrow(STSR))
+  out$exacttest <- topTags(STSR)
   return(out)
 }
 
@@ -161,14 +178,7 @@ de.results_act <- pseudoBulkDGE(agg_cell_types,
                                 coef = "treatmentST"
 )
 
-
-de.results_act <- sapply(unique(agg_cell_types$celltype), PBDGE, sce = agg_cell_types, 
-                         USE.NAMES = T, simplify = F)
-names(de.results_act) <- unique(agg_cell_types$celltype)
-
-
 cell_type_DEG_output <- lapply(de.results_act, make_pca_function, ortholog_table = ortholog_table)
-
 
 PCAs <- lapply(cell_type_DEG_output, function(x)(return(x$PCA)))
 Volcanos <- lapply(cell_type_DEG_output, function(x)(return(x$Volcano)))
@@ -210,6 +220,27 @@ tidy_raw_counts <- raw_counts %>% as.data.frame %>%
   mutate(Chr = ifelse(genes %in% Xgenes, "X", "A")) %>% 
   mutate(Chr = ifelse(!(genes %in% c(Xgenes, Agenes)), "Mito", Chr))
 
+check_dc_plot <- tidy_cpm %>% 
+  filter(logcpm > min(logcpm)) %>% 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic \ncyst", 
+                                                "Post-meiotic \ncyst", "GSC/Spermatogonia", 
+                                                "Primary Spermatocytes", "Secondary Spermatocytes", 
+                                                "Spermatids"))) %>% 
+  filter(treatment == "ST") %>%
+  filter(Chr != 'Mito') %>% 
+  group_by(celltype, genes, Chr, treatment) %>% 
+  summarise(logcpm = mean(logcpm)) %>% 
+  mutate(Chromosome = Chr) %>% 
+  ggplot(aes(x = celltype, y = logcpm, fill = Chromosome)) + geom_boxplot(outlier.alpha = 0.2) + 
+  labs(x = "Cell Type", y = "log(CPM)", fill = "Chromosome") + #add sig values between Chrs
+  stat_compare_means( aes(label = ..p.signif..), 
+                      label.x = 1.5, label.y = 20) + 
+  theme_classic() + scale_fill_brewer(palette = 'Set2') + 
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+ggsave("plots/ST_dosage_compensation.pdf", check_dc_plot, width = 10, height = 6)
+
+
 ################################################################################
 
 
@@ -217,23 +248,42 @@ tidy_raw_counts <- raw_counts %>% as.data.frame %>%
 ############ DC 2 ------------
 
 get_cpm_values_func <- function(x){
-  md <- x$res
-  ST <- rownames(filter(md$samples, treatment == "ST"))
-  SR <- rownames(filter(md$samples, treatment == "SR"))
-  cpm <- x$logcpm %>% 
+  md <- metadata(x)
+  ST <- rownames(filter(md$y$samples, treatment == "ST"))
+  SR <- rownames(filter(md$y$samples, treatment == "SR"))
+  md <- metadata(x)
+  cpm <- md$y %>% 
+    edgeR::cpm(log = TRUE) %>% 
     as.data.frame() %>%
     rownames_to_column("genes") %>% 
     pivot_longer(cols = colnames(.)[2:ncol(.)], names_to = "sample", values_to = "logcpm") %>% 
     mutate(Chr = ifelse(genes %in% Xgenes, "X", 
                         ifelse(genes %in% Agenes, "A", "Mito"))) %>% 
     mutate(treatment = ifelse(sample %in% ST, "ST", "SR")) %>% 
-    mutate(celltype = md$samples$celltype[1]) %>% 
+    mutate(celltype = md$y$samples$celltype[1]) %>% 
     rename(edgeRsample = sample) %>% 
-    mutate(sample = md$samples[edgeRsample,]$sample)
+    mutate(sample = md$y$samples[edgeRsample,]$sample)
   return(cpm)
 }  
 
 tidy_cpm2 <- lapply(de.results_act, get_cpm_values_func) %>% bind_rows()
+check_dc_plot2 <- tidy_cpm2 %>% 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic \ncyst", 
+                                                "Post-meiotic \ncyst", "GSC/Spermatogonia", 
+                                                "Primary Spermatocytes", "Secondary Spermatocytes", 
+                                                "Spermatids"))) %>% 
+  #filter(treatment == "ST") %>%
+  filter(Chr != 'Mito') %>% 
+  group_by(celltype, genes, Chr, treatment) %>% 
+  summarise(logcpm = mean(logcpm)) %>% 
+  mutate(Chromosome = Chr) %>% 
+  ggplot(aes(x = celltype, y = logcpm, fill = Chromosome)) + geom_boxplot(outlier.alpha = 0.2) + 
+  labs(x = "Cell Type", y = "log(CPM)", fill = "Chromosome") + #add sig values between Chrs
+  stat_compare_means( aes(label = ..p.signif..), 
+                      label.x = 1.5, label.y = 20) + 
+  theme_classic() + scale_fill_brewer(palette = 'Set2') + 
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
+  facet_wrap(~treatment)
 
 write.csv(tidy_cpm2, "data/MANUSCRIPT/filtered_cpm_values.csv", row.names = F)
 ################################

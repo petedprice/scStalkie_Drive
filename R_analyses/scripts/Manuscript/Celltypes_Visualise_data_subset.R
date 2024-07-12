@@ -7,7 +7,7 @@ library(ggpubr)
 library(clustree)
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 
-recluster=FALSE
+recluster=TRUE
 
  if (recluster == TRUE){
   load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_celltype.RData")
@@ -177,32 +177,29 @@ seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% P
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Secondary_Spermatocytes] <- "Secondary Spermatocytes"
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Spermatids] <- "Spermatids"
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% `GSC/Spermatogonia`] <- "GSC/Spermatogonia"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Pre_meiotic_cyst] <- "Pre-meiotic \ncyst"
-seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Post_meiotic_cyst] <- "Post-meiotic \ncyst"
+seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Pre_meiotic_cyst] <- "Pre-meiotic cyst"
+seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Post_meiotic_cyst] <- "Post-meiotic cyst"
 
 
 ######## REMOVE STRAGGLER CELLS ---------
-rm_spermatid_cells <- c("sr5_AACAGGGGTAATGCTC-1", "sr5_AATGAAGCAAATGCTC-1", "sr5_AATGCCACAATGACCT-1", "sr5_AGCCACGCATCGTGGC-1",
-                        "sr5_ATCACAGTCCTTCAGC-1", "sr5_ATCATTCTCGTGCACG-1", "sr5_CCCTAACCAACGCATT-1", "sr5_CTCATGCCACTGGATT-1",
-                        "sr5_GCGGAAACAGAACATA-1", "sr5_GGACGTCTCTCGACGG-1", "sr5_GTGCTTCCACACGCCA-1", "sr5_TATCGCCGTCTCCTGT-1",
-                        "sr5_TGCATCCAGCGACTTT-1", "sr5_TGCTTGCTCCGTATGA-1", "sr5_TGTCAGAGTATCAGGG-1", "st1_GGGTGAATCCGTTGGG-1",
-                        "st2_AGGCCACGTCGAATTC-1", "st3_AGGCCACTCTGCTTTA-1", "st3_ATGCGATCAAGCGCTC-1", "sr3_TTGCGTCAGCGGATCA-1")
+#rm_spermatid_cells <- c("sr5_AACAGGGGTAATGCTC-1", "sr5_AATGAAGCAAATGCTC-1", "sr5_AATGCCACAATGACCT-1", "sr5_AGCCACGCATCGTGGC-1",
+#                        "sr5_ATCACAGTCCTTCAGC-1", "sr5_ATCATTCTCGTGCACG-1", "sr5_CCCTAACCAACGCATT-1", "sr5_CTCATGCCACTGGATT-1",
+#                        "sr5_GCGGAAACAGAACATA-1", "sr5_GGACGTCTCTCGACGG-1", "sr5_GTGCTTCCACACGCCA-1", "sr5_TATCGCCGTCTCCTGT-1",
+#                        "sr5_TGCATCCAGCGACTTT-1", "sr5_TGCTTGCTCCGTATGA-1", "sr5_TGTCAGAGTATCAGGG-1", "st1_GGGTGAATCCGTTGGG-1",
+#                        "st2_AGGCCACGTCGAATTC-1", "st3_AGGCCACTCTGCTTTA-1", "st3_ATGCGATCAAGCGCTC-1", "sr3_TTGCGTCAGCGGATCA-1")
 
 seurat_final <- subset(seurat_integrated_ss, cells = rm_spermatid_cells, invert = TRUE)
 #########################################
 
 
 Idents(seurat_final) <- seurat_final$celltype
-seurat_final@meta.data$celltype <- factor(seurat_final@meta.data$celltype, 
-                                                  levels = c("Muscle", "Pre-meiotic \ncyst", "Post-meiotic \ncyst", 
-                                                             "GSC/Spermatogonia", "Primary Spermatocytes", 
-                                                             "Secondary Spermatocytes", "Spermatids"))
-  
 
 
-levels(seurat_final) <- c("Muscle", "Pre-meiotic \ncyst", "Post-meiotic \ncyst", 
+levels(seurat_final) <- c("Muscle", "Pre-meiotic cyst", "Post-meiotic cyst", 
                                   "GSC/Spermatogonia", "Primary Spermatocytes", 
                                   "Secondary Spermatocytes", "Spermatids")
+
+save(seurat_final, main_figure_markers, file = 'data/RData/seurat_final.RData')
 
 dps_all_figure <- DotPlot(seurat_final, features = names(main_figure_markers), assay = "RNA")+coord_flip() +
   scale_x_discrete(labels = as.vector((main_figure_markers))) + 
@@ -239,84 +236,9 @@ ggarrange(UMAP, ggarrange(dps_all_figure, nfeatures_figure, ncol = 2, labels = c
                           widths = c(6,4)), nrow = 2, heights = c(2.2, 1), labels = "A") %>% 
   ggsave("plots/MarkersUMAPFeatures.pdf", ., width = 24, height = 13)
 
+cowplot::plot_grid(UMAP, ggarrange(dps_all_figure, nfeatures_figure, ncol = 2, labels = c("B", "C"),
+                          widths = c(6,4)), nrow = 2, heights = c(2.2, 1), labels = "A") %>% 
+  ggsave("plots/MarkersUMAPFeatures_cowplot.pdf", ., width = 24, height = 13)
 
 
-
-save(seurat_final, file = "data/RData/seurat_final.RData")
-
-
-
-
-
-
-######### ADDITIONAL CELLTYPE ASSIGNMENT USING NO GENES EXPRESSED -----
-no_genes_plots <- list()
-no_genes_plots[[1]] <- seurat_integrated@meta.data %>% 
-  ggplot(aes(x = integrated_snn_res.0.4, y = nFeature_RNA, fill = treatment)) +
-  geom_boxplot()
-no_genes_plots[[2]] <- seurat_integrated@meta.data %>% 
-  ggplot(aes(x = integrated_snn_res.0.4, y = log(nCount_RNA), fill = treatment)) +
-  geom_boxplot()
-no_genes_plots[[3]] <- seurat_integrated@meta.data %>% 
-  ggplot(aes(x = integrated_snn_res.0.4, y = log10GenesPerUMI, fill = treatment)) +
-  geom_boxplot()
-no_genes_plots[[4]] <- DimPlot(seurat_integrated, group.by = 'integrated_snn_res.0.4', label = T)
-no_genes_plots_arranged <- ggarrange(plotlist = no_genes_plots, ncol = 2, nrow = 2)
-no_genes_plots_arranged
-ggsave("plots/no_genes_plots.png", no_genes_plots_arranged, height = 13, width = 15)
-
-no_genes_featplots <- FeaturePlot(seurat_integrated, features = c("nFeature_RNA", "nCount_RNA", "log10GenesPerUMI"), pt.size = 0.5, split.by = 'treatment')
-no_genes_featplots <- no_genes_featplots & theme(legend.position = c(0.1,0.2))
-ggsave("plots/no_genes_featplots.png", no_genes_featplots, height = 10, width = 15)
-
-
-
-
-######### ADDITIONAL CELLTYPE ASSIGNMENT USING X GENES EXPRESSED -----
-Xgenes <- filter(ortholog_table, chr == "Chr_X") %>% 
-  dplyr::select(REF_GENE_NAME) %>% unlist() %>% 
-  gsub("_", "-", .) %>% 
-  c() %>% intersect(rownames(seurat_integrated@assays$RNA@counts))
-
-Xexp <- PercentageFeatureSet(seurat_integrated, features = Xgenes)
-seurat_integrated <- AddMetaData(object = seurat_integrated, metadata = Xexp, col.name = 'Xexp')
-
-Xgene_prop <- colSums(seurat_integrated@assays$RNA$counts[Xgenes,] > 0)/
-  colSums(seurat_integrated@assays$RNA$counts > 0)
-
-seurat_integrated <- AddMetaData(object = seurat_integrated, metadata = Xgene_prop, col.name = 'Xprop')
-
-xplots <- list()
-xplots[[1]] <- seurat_integrated@meta.data %>% 
-  ggplot(aes(x = integrated_snn_res.0.4, y = Xexp, fill = treatment)) +
-  geom_boxplot()
-xplots[[2]] <- seurat_integrated@meta.data %>% 
-  ggplot(aes(x = integrated_snn_res.0.4, y = Xprop, fill = treatment)) +
-  geom_boxplot()
-xplots[[3]] <- DimPlot(seurat_integrated, group.by = res, label = T)
-xplots[[4]] <- FeaturePlot(seurat_integrated, features = c("Xexp", "Xprop"), pt.size = 0.5, split.by = 'treatment')
-xplots_arranged <- ggarrange(plotlist = xplots, ncol = 2, nrow = 2)
-xplots_arranged
-ggsave("plots/xplots.png", xplots_arranged, height = 13, width = 15)
-###
-
-data_info <- list()
-data_info[[1]] <- seurat_integrated@meta.data %>% 
-  ggplot(aes(x = integrated_snn_res.0.4, fill = treatment, y = mitoRatio)) + 
-  geom_boxplot()
-data_info[[2]] <- seurat_integrated@meta.data %>% 
-  ggplot(aes(x = integrated_snn_res.0.4, fill = treatment, y = nFeature_SCT)) + 
-  geom_boxplot()
-data_info[[3]] <- seurat_integrated@meta.data %>% 
-  ggplot(aes(x = integrated_snn_res.0.4, fill = treatment, y = nCount_SCT)) + 
-  geom_boxplot()
-data_info[[4]] <- seurat_integrated@meta.data %>% 
-  ggplot(aes(x = integrated_snn_res.0.4, fill = treatment, y = Xprop)) + 
-  geom_boxplot()
-ggpubr::ggarrange(plotlist = data_info, ncol = 2, nrow = 2, labels = c(1:4))
-ggsave("plots/expression_info.pdf", height = 20, width = 30)
-
-
-
-
-
+####################################

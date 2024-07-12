@@ -9,17 +9,48 @@ library(grDevices)
 library(TSCAN)
 library(pheatmap)
 
-load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned_ss.RData")
+load("data/RData/seurat_final.RData")
 load("data/trajectory/sce_GAMed.RData")
 
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
+ortholog_table$REF_GENE_NAME <- gsub("_", "-", ortholog_table$REF_GENE_NAME)
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
 
 ################################################################################
 
+Pseudotime_data <- reducedDims(sce)$UMAP %>% as.data.frame() %>% 
+  merge(seurat_final@meta.data, by.x = 0, by.y = 'cells', all.y = F) %>% 
+  mutate(cells = Row.names)
 
+traj_line <- SlingshotDataSet(sce)@curves$Lineage1
 
+pts <- data.frame(Pseudotime = c(unlist(traj_line[[3]])), 
+                  cells = names(c(unlist(traj_line[[3]]))))
+
+Pseudotime_data <- Pseudotime_data %>% 
+  merge(pts, by = 'cells')
+
+p1 <- ggplot() + 
+  geom_point(data = Pseudotime_data, aes(x = umap_1, y = umap_2, colour = Pseudotime)) + 
+  geom_smooth(data = traj_line[[1]], aes(x = umap_1, y = umap_2), colour = 'azure4') +
+  theme_bw() +
+  scale_color_continuous(low = "purple", high = "orange") + 
+  labs(x = "UMAP 1", y = "UMAP 2")
+
+Pseudotime_data  %>% 
+  ggplot(aes(x = Pseudotime, y = nFeature_RNA)) + 
+  geom_point() + 
+  geom_smooth()
+seurat_final@meta.data %>% 
+  ggplot(aes(x = nFeature_RNA, y = log10GenesPerUMI, colour = Phase)) + 
+  geom_point()
+Pseudotime_data %>% 
+  ggplot(aes(x = umap_1, y = umap_2, colour = nFeature_RNA < 1250)) + 
+  geom_point() + 
+  facet_wrap(~(nFeature_RNA < 1250)  + sample)
+seurat_final@meta.data %>% 
+  filter(nFeature_RNA < 1250) %>% dim()
 ########################## TRADESEQ ############################################
 
 rowData(sce_trad)$assocRes <- associationTest(sce_trad, lineages = T, l2fc = log2(0.5))
@@ -37,7 +68,7 @@ bias_genes <-  rownames(assocRes)[
 condRes <- conditionTest(sce_trad, l2fc = log2(2))
 condRes$padj <- p.adjust(condRes$pvalue, "fdr")
 mean(condRes$padj <= 0.05, na.rm = TRUE)
-sum(condRes$padj <= 0.05, na.rm = TRUE)
+sum(condRes$padj <= 0.001, na.rm = TRUE)
 
 conditionGenes <- rownames(condRes)[condRes$padj <= 0.05]
 conditionGenes <- conditionGenes[!is.na(conditionGenes)]
@@ -46,7 +77,7 @@ oo <- order(condRes$waldStat, decreasing = TRUE)
 
 # most significant gene
 plotSmoothers(sce_trad, assays(sce_trad)$counts,
-              gene = rownames(assays(sce_trad)$counts)[oo[1]],
+              gene = rownames(assays(sce_trad)$counts)[oo[17]],
               alpha = 1, border = TRUE)
 
 # least significant gene
@@ -54,6 +85,9 @@ plotSmoothers(sce_trad, assays(sce_trad)$counts,
               gene = rownames(assays(sce_trad)$counts)[oo[nrow(sce_trad)]],
               alpha = 1, border = TRUE)
 
+
+top_genes <- rownames(assays(sce_trad)$counts)[oo[1:20]]
+View(filter(ortholog_table, REF_GENE_NAME %in% top_genes))
 
 ##################### MARKER GENES ---------------------------
 # Look at trajectory of key marker genes for figure of in manuscript, these are 
@@ -87,9 +121,9 @@ CycB <- plotSmoothers(sce_trad, assays(sce_trad)$counts,
   labs(title = "CycB")
 
 pt_data <- data.frame(pseudotime = sce$slingPseudotime_1, celltype = sce$celltype)
-pt_data$celltype <- factor(pt_data$celltype, levels = c("GSC & Spermatogonia", "Spermatocytes", "Spermatids"))
+pt_data$celltype <- factor(pt_data$celltype, levels = c("GSC/Spermatogonia", "Primary Spermatocytes", "Secondary Spermatocytes", "Spermatids"))
 pseudotime_celltypes <- pt_data %>% 
-  filter(celltype %in% c("GSC & Spermatogonia", "Spermatocytes", "Spermatids")) %>%
+  filter(celltype %in% c("GSC/Spermatogonia", "Primary Spermatocytes", "Secondary Spermatocytes", "Spermatids")) %>%
   ggplot(., aes(x = pseudotime, y = celltype)) + 
   geom_boxplot(outlier.alpha = 0) + 
   labs(x = "Pseudotime", y = "Cell Types") + 

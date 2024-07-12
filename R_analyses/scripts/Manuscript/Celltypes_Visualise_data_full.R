@@ -5,7 +5,7 @@ library(stringr)
 library(gridExtra)
 library(ggpubr)
 library(clustree)
-load("data/RData/integrated_seurat_nf200_mtr0.20_gu0.RData")
+load("data/RData/param_checks/integrated_seurat_nf200_mtr0.20_gu0.RData")
 seurat_integrated$treatment <- "SR"
 seurat_integrated$treatment[grep("st", seurat_integrated$sample)] <- "ST"
 DefaultAssay(seurat_integrated) <- "integrated"
@@ -26,10 +26,9 @@ co2 <- sort(which((pct[1:length(pct) - 1] - pct[2:length(pct)]) > 0.1), decreasi
 
 # last point where change of % of variation is more than 0.1%.
 pcs <- min(co1, co2)
-pcs
 seurat_integrated <- RunUMAP(seurat_integrated, dims = 1:pcs)
 seurat_integrated <- RunPCA(seurat_integrated, dims = 1:pcs)
-
+seurat_integrated <- RunTSNE(seurat_integrated, dims = 1:pcs)
 
 ######### Determining resolution to use --------
 seurat_integrated <- FindNeighbors(object=seurat_integrated, dims=1:pcs)
@@ -41,7 +40,7 @@ CT <- plot(clusttree)
 CT_noclusters <- clusttree$data %>% 
   group_by(integrated_snn_res.) %>% 
   summarise(no_clusters = n_distinct(cluster)) %>% 
-  rename(resolution = integrated_snn_res.) %>%
+  dplyr::rename(resolution = `integrated_snn_res.`) %>%
   ggplot(aes(x = resolution, y = no_clusters)) +
   geom_point()
 
@@ -52,7 +51,6 @@ ggsave("plots/clustering_plots.png", clustering_plots, height = 30, width = 30)
 
 res <- 'integrated_snn_res.0.4'
 Idents(seurat_integrated) <- res
-
 save(seurat_integrated, file = 'data/RData/integrated_seurat_nf200_mtr0.20_gu0_cleaned.RData')
 
 
@@ -128,28 +126,34 @@ for (m in c("Celltype.(Specific)", "Celltype.(Broad)")){
 
 #----------------------------------------------
 
+
+main_figure_markers <- markers$T.dal.Ortholog[markers$Key.Marker == "Yes"] %>% 
+  gsub("_", "-", .) %>% 
+  gsub(" ", "", .) %>% 
+  unique() %>% 
+  strsplit(",") %>% unlist() %>% 
+  lapply(., function(x)(grep(x, new_names))) %>% unlist() %>% 
+  new_names[.] %>% 
+  .[c(14,3,1,5,13,4,8,9,2,6,12)]
+main_figure_markers <- factor(main_figure_markers, levels = rev(main_figure_markers))
+dps_all_figure <- DotPlot(seurat_integrated, features = names(main_figure_markers), assay = "RNA")+coord_flip() +
+  scale_x_discrete(labels = as.vector((main_figure_markers)))
+DP <- DimPlot(seurat_integrated, label = T)
+FP <- FeaturePlot(seurat_integrated, features = 'nFeature_RNA')
+FP2 <- seurat_integrated@meta.data %>% 
+  ggplot(aes(x = integrated_snn_res.0.1, y = nFeature_RNA)) + geom_boxplot()
+ggarrange(plotlist = list(dps_all_figure, DP, FP, FP2), ncol = 4, nrow = 1, labels = c("A", "B", "C"))
+
+
 #################### FINAL ASSIGNMENT -------------------------
 
-GSC_G <- c(0,1)
-Cyst <- c(3,5,10,11)
-Early_Spermatid <- c(7)
-Late_Spermatid <- c(8)
-Primary_Spermatocyte <- c(13,14)
-Secondary_Spermatocyte <- c(17)
 Unknown <- c(2,4,6,12)
-TBC <- c(9,14,15,16,18)
-Muscle <- 19
+seurat_integrated@meta.data$celltype <- "Keep"
 
-seurat_integrated@meta.data$celltype <- "TBC"
-seurat_integrated@meta.data$celltype[which(seurat_integrated@meta.data$integrated_snn_res.0.4 %in% GSC_G)] <- "GSC/Spermatogonia"
-seurat_integrated@meta.data$celltype[which(seurat_integrated@meta.data$integrated_snn_res.0.4 %in% Cyst)] <- "Cyst"
-seurat_integrated@meta.data$celltype[which(seurat_integrated@meta.data$integrated_snn_res.0.4 %in% c(Early_Spermatid, Late_Spermatid))] <- "Spermatid"
-seurat_integrated@meta.data$celltype[which(seurat_integrated@meta.data$integrated_snn_res.0.4 %in% c(Primary_Spermatocyte, Secondary_Spermatocyte))] <- "Spermatocyte"
-seurat_integrated@meta.data$celltype[which(seurat_integrated@meta.data$integrated_snn_res.0.4 %in% Muscle)] <- "Muscle"
 seurat_integrated@meta.data$celltype[which(seurat_integrated@meta.data$integrated_snn_res.0.4 %in% Unknown)] <- "Unknown"
+seurat_integrated_ss <- subset(seurat_integrated, idents = c("Keep"))
 
 save(seurat_integrated, file = "data/RData//integrated_seurat_nf200_mtr0.20_gu0_cleaned_celltype.RData")
-
 ###############################################################
  
 
