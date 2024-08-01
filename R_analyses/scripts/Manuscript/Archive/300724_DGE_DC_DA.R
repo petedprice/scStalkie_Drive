@@ -143,9 +143,9 @@ medianAs <- tidy_cpm_edger %>%
 
 
 XA <- tidy_cpm_edger %>% 
-  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
-                                                "Late cyst", "GSC/Spermatogonia", 
-                                                "Primary spermatocytes", "Secondary spermatocytes", 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic cyst", 
+                                                "Post-meiotic cyst", "GSC/Spermatogonia", 
+                                                "Primary Spermatocytes", "Secondary Spermatocytes", 
                                                 "Spermatids"))) %>% merge(medianAs) %>% 
   group_by(celltype, genes, Chr, treatment, medianA) %>% 
   summarise(logcpm = log2(mean(2^logcpm))) %>% 
@@ -158,7 +158,7 @@ XA <- tidy_cpm_edger %>%
 ## No of DGE ##
 
 
-########################  ENRICHMENT FIGURE ##########################
+######################## CHISQUARED ENRICHMENT FIGURE ##########################
 get_DGE_data <- function(ct,x){out = x[[ct]][['toptags']]$table
                              out$celltype <-  ct
                              out$genes <- rownames(out)
@@ -170,7 +170,7 @@ dif_exp_data <- lapply(names(de.results_act_edger), get_DGE_data, x = de.results
   mutate(Significant = ifelse(.$logFC > 1 & .$FDR < 0.05, "ST-biased",
                                                               ifelse(.$logFC < -1 & .$FDR < 0.05, "SR-biased", "Unbiased"))) %>% 
   merge(ortholog_table, by.x = 'genes', by.y = 'REF_GENE_NAME')
-save(XA, tidy_cpm_edger, dif_exp_data, de.results_act_edger, file = "data/RData/DEG_DC.RData")
+save(XA, tidy_cpm_edger, dif_exp_data, file = "data/RData/DEG_DC.RData")
 
 dif_exp_data_table <-  dif_exp_data %>% 
   mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
@@ -184,33 +184,80 @@ dif_exp_data_table <-  dif_exp_data %>%
 dif_exp_data_table[is.na(dif_exp_data_table)] <- 0
 
 
+### CHISQURED ---                                                                  
+csq_chr_func <- function(ct, data){
+  #data <- filter(data, celltype == ct)
+  chsq_table <- data %>%
+    group_by(Significant, chr, celltype) %>% 
+    summarise(n = n()) %>% #trnasformn variables into rows and columns
+    spread(Significant, n)
+  chsq_table[is.na(chsq_table)] <- 0
+  chsq_table <- filter(chsq_table, celltype == ct)
+  chsq_results <- chisq.test(chsq_table[,c(3:5)], simulate.p.value = T)
+  #fisher_results <- fisher.test(as.matrix(chsq_table[,c(3:5)]), simulate.p.value=T)
+  
+  rsds <- chsq_results$residuals %>% as.data.frame()
+  rsds$chr <- chsq_table$chr
+  rsds$celltype <- chsq_table$celltype[[1]]
+  
+  rsds$pvalue <- chsq_results$p.value[1]
+  #rsds$fisher_pvalue <- fisher_results$p.value
+  return(rsds)
+} 
+#Chisquared for each cell type 
+chisq_list <- lapply(unique(dif_exp_data$celltype), csq_chr_func, data = dif_exp_data) %>% 
+  bind_rows() %>% #collapse not_sig, SR_bias and ST_bias into single column 
+  pivot_longer(c("Unbiased", "SR-biased", "ST-biased"), names_to = "Expression class", values_to = "chisq_resid")
+
+
+#Chi squared for all cell types
+dif_exp_data_table %>% group_by(`Cell type`) %>%
+  summarise(`SR-biased` = sum(`SR-biased`), 
+            `ST-biased` = sum(`ST-biased`),
+            `Unbiased` = sum(`Unbiased`)) %>% 
+  column_to_rownames("Cell type") %>% #mutate(
+    #prop_SR = `SR-biased`/Unbiased, 
+    #prop_ST = `ST-biased`/Unbiased) %>%
+  chisq.test(.) %>% 
+  .$residuals
+
+chisq_list %>% dplyr::select(celltype, pvalue) %>% 
+  unique() %>% merge(dif_exp_data_table, by.x = 'celltype', by.y = 'Cell type') %>% 
+  mutate(pvalue = format(pvalue, scientific = TRUE, digits = 3)) %>% 
+  mutate(pvalue = p.adjust(pvalue)) %>%
+  relocate(pvalue, .after = Unbiased) %>% 
+  rename(`Cell type` = celltype, 
+         `FDR Adjusted X2 p-value` = pvalue) %>% 
+  .[c(3,4,7,8,5,6,1,2,9:14),] %>% 
+  write.table(., "data/DEG_table.tsv", sep = "\t", quote = F, row.names = F)
+
 ##############################################################
 
 #glm of DGE data #
 model1 <- dif_exp_data %>% 
   mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
   #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
-  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
-                                                "Late cyst", "GSC/Spermatogonia", 
-                                                "Primary spermatocytes", "Secondary spermatocytes", 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic cyst",
+                                                "Post-meiotic cyst", "GSC/Spermatogonia", 
+                                                "Primary Spermatocytes", "Secondary Spermatocytes", 
                                                 "Spermatids"))) %>%
   glm(Significant ~chr, family = binomial, data = .)
 
 model2 <- dif_exp_data %>% 
   mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
   #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
-  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
-                                                "Late cyst", "GSC/Spermatogonia", 
-                                                "Primary spermatocytes", "Secondary spermatocytes", 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic cyst",
+                                                "Post-meiotic cyst", "GSC/Spermatogonia", 
+                                                "Primary Spermatocytes", "Secondary Spermatocytes", 
                                                 "Spermatids"))) %>%
   glm(Significant ~1 +celltype, family = binomial, data = .)
 
 model3 <- dif_exp_data %>% 
   mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
   #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
-  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
-                                                "Late cyst", "GSC/Spermatogonia", 
-                                                "Primary spermatocytes", "Secondary spermatocytes", 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic cyst",
+                                                "Post-meiotic cyst", "GSC/Spermatogonia", 
+                                                "Primary Spermatocytes", "Secondary Spermatocytes", 
                                                 "Spermatids"))) %>%
   glm(Significant ~celltype + chr, family = binomial, data = .)
 
@@ -218,9 +265,9 @@ model3 <- dif_exp_data %>%
 model4 <- dif_exp_data %>% 
   mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
   #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
-  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
-                                                "Late cyst", "GSC/Spermatogonia", 
-                                                "Primary spermatocytes", "Secondary spermatocytes", 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic cyst",
+                                                "Post-meiotic cyst", "GSC/Spermatogonia", 
+                                                "Primary Spermatocytes", "Secondary Spermatocytes", 
                                                 "Spermatids"))) %>%
   glm(Significant ~(chr * celltype), family = binomial, data = .)
 
@@ -230,14 +277,7 @@ anova(model2, model3, test = "Chisq")
 anova(model3, model4, test = "Chisq")
 
 #Model 3 is best fit 
-summary(model3)$coefficients %>% 
-  write.table("data/DEG_model3_coefficients.tsv", sep = "\t", quote = F, row.names = T)
-
-
-dif_exp_data_table %>% 
-  .[c(3,4,7,8,5,6,1,2,9:14),] %>% 
-  write.table(., "data/DEG_table.tsv", sep = "\t", quote = F, row.names = F)
-
+summary(model3)
 
 
 ################# INVERSION CHECK --------------
@@ -287,74 +327,13 @@ model_inv <- DGE_inversion %>%
   filter(chr == "Chr_X") %>% 
   mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
   #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
-  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
-                                                "Late cyst", "GSC/Spermatogonia", 
-                                                "Primary spermatocytes", "Secondary spermatocytes", 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Pre-meiotic cyst",
+                                                "Post-meiotic cyst", "GSC/Spermatogonia", 
+                                                "Primary Spermatocytes", "Secondary Spermatocytes", 
                                                 "Spermatids"))) %>%
   glm(Significant ~celltype + inversion, family = binomial, data = .)
 
-summary(model_inv)$coefficients %>% 
-  write.table("data/DEG_model_inv_coefficients.tsv", sep = "\t", quote = F, row.names = T)
+summary(model_inv)
 #There are no interesting results for enrichment of DGE inside/outside the inversion 
 
-### Candidate Genes ###
-Volcano_Plot <- function(ct){
-  myTheme <- theme(legend.text = element_text(size = 12), 
-                   legend.title = element_text(size = 14),
-                   legend.key.size = unit(2, 'line'))
-  
-  data <- de.results_act_edger[[ct]]$res$table %>% 
-    mutate(FDR = p.adjust(PValue, method = "BH")) %>% 
-    mutate(gene = rownames(.)) %>% 
-    merge(ortholog_table, by.x = "gene", by.y = "REF_GENE_NAME") %>% 
-    mutate(Chromosome = chr)
-  plot <- data %>% 
-    ggplot(aes(x = logFC, y = -log10(FDR), 
-               colour = (abs(logFC) > 1 & FDR < 0.05), shape = Chromosome)) +
-    geom_point() + scale_colour_hue(guide = F, l = 45) +
-    geom_hline(yintercept = -log10(0.05), linetype = 2) + 
-    geom_vline(xintercept = c(-1, 1), linetype = 2) + 
-    theme_classic() +
-    #theme(legend.position = "none") + 
-    labs(title = paste0(ct, ': \n+ve = ST-biased,  -ve = SR-biased')) + 
-    geom_text_repel(data = data %>% filter(abs(logFC) > 1 & FDR < 0.05), 
-                     aes(label = consensus_gene), 
-                     box.padding = 0.5, point.padding = 0.5, segment.color = 'grey50') + 
-    xlim(-7.5, 7.5) + 
-    ylim(0,10) + myTheme + 
-    guides(shape = guide_legend(override.aes = list(size = 5)))
-  return(plot)
-}
 
-
-Volcano_Plot <- function(ct){
-  myTheme <- theme(legend.text = element_text(size = 12), 
-                   legend.title = element_text(size = 14),
-                   legend.key.size = unit(2, 'line'))
-  
-  data <- dif_exp_data %>% 
-    filter(celltype == ct) %>% 
-    mutate(Chromosome = chr)
-  plot <- data %>% 
-    ggplot(aes(x = logFC, y = -log10(FDR), 
-               colour = Significant, shape = Chromosome)) +
-    geom_point() + scale_colour_hue(guide = F, l = 45) +
-    geom_hline(yintercept = -log10(0.05), linetype = 2) + 
-    geom_vline(xintercept = c(-1, 1), linetype = 2) + 
-    theme_classic() +
-    #theme(legend.position = "none") + 
-    labs(title = paste0(ct, ': \n+ve = ST-biased,  -ve = SR-biased')) + 
-    geom_text_repel(data = data %>% filter(abs(logFC) > 1 & FDR < 0.05), 
-                    aes(label = consensus_gene), 
-                    box.padding = 0.5, point.padding = 0.5, segment.color = 'grey50') + 
-    xlim(-7.5, 7.5) + 
-    ylim(0,10) + myTheme + 
-    guides(shape = guide_legend(override.aes = list(size = 5)))
-  return(plot)
-}
-
-
-volc_plots <- lapply(names(de.results_act_edger), Volcano_Plot)
-ggarrange(plotlist = volc_plots[c(2,4,3,1,5,6,7)], 
-          common.legend = T, 
-          legend = "bottom")

@@ -4,6 +4,7 @@ out_gff <- data.frame(matrix(ncol = 9))
 colnames(out_gff) <- colnames(gff)
 #gff$gene <- str_split(gff$V9, ";", simplify = T)[,2] %>% 
 #  gsub("Name=", "", .)
+ls 
 
 for (i in 1:nrow(gff)){
   if (gff[i,3] %in% c("gene", "CDS")){
