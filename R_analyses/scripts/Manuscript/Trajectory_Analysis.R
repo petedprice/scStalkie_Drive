@@ -8,9 +8,33 @@ library(tradeSeq)
 library(grDevices)
 library(TSCAN)
 library(pheatmap)
+rm(list = ls())
+
 
 load("data/RData/seurat_final.RData")
 load("data/trajectory/sce_GAMed.RData")
+
+Idents(seurat_final) <- seurat_final$celltype
+
+DefaultAssay(seurat_final) <- "RNA"
+Idents(seurat_final) <- seurat_final$celltype
+
+keep_clusters <- c("GSC/Spermatogonia", "Primary spermatocytes", "Spermatocytes", "Secondary spermatocytes", "Spermatids")
+keep_clusters <- keep_clusters[keep_clusters %in% unique(seurat_final$celltype)]
+
+Idents(seurat_final) <- 'integrated_snn_res.0.4'
+
+sce <- seurat_final %>% 
+  subset(., idents = keep_clusters) %>% 
+  as.SingleCellExperiment(., assay = 'RNA')
+
+sce <- slingshot(sce, clusterLabels = 'celltype', reducedDim = "UMAP", start.clus = 'GSC/Spermatogonia',
+                 end.clus = 'Spermatids')
+
+counts <- counts(sce)[which(rowSums(counts(sce)) != 0),]
+pseudotime <- slingPseudotime(sce, na = FALSE)
+cellWeights <- slingCurveWeights(sce)
+
 
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 ortholog_table$REF_GENE_NAME <- gsub("_", "-", ortholog_table$REF_GENE_NAME)
@@ -22,6 +46,11 @@ ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] =
 Pseudotime_data <- reducedDims(sce)$UMAP %>% as.data.frame() %>% 
   merge(seurat_final@meta.data, by.x = 0, by.y = 'cells', all.y = F) %>% 
   mutate(cells = Row.names)
+
+
+sce <- slingshot(sce, clusterLabels = 'celltype', reducedDim = "UMAP", start.clus = 'GSC/Spermatogonia',
+                 end.clus = 'Spermatids')
+
 
 traj_line <- SlingshotDataSet(sce)@curves$Lineage1
 
@@ -45,12 +74,6 @@ Pseudotime_data  %>%
 seurat_final@meta.data %>% 
   ggplot(aes(x = nFeature_RNA, y = log10GenesPerUMI, colour = Phase)) + 
   geom_point()
-Pseudotime_data %>% 
-  ggplot(aes(x = umap_1, y = umap_2, colour = nFeature_RNA < 1250)) + 
-  geom_point() + 
-  facet_wrap(~(nFeature_RNA < 1250)  + sample)
-seurat_final@meta.data %>% 
-  filter(nFeature_RNA < 1250) %>% dim()
 ########################## TRADESEQ ############################################
 
 rowData(sce_trad)$assocRes <- associationTest(sce_trad, lineages = T, l2fc = log2(0.5))

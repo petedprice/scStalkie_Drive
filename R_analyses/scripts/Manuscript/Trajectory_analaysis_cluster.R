@@ -16,9 +16,9 @@ run_type = args[2]
 Idents(seurat_final) <- seurat_final$celltype
 
 DefaultAssay(seurat_final) <- "RNA"
+seurat_final@meta.data$celltype[seurat_final$integrated_snn_res.0.4 == 5] <- "Late spermatids"
 Idents(seurat_final) <- seurat_final$celltype
-
-keep_clusters <- c("GSC/Spermatogonia", "Primary Spermatocytes", "Spermatocytes", "Secondary Spermatocytes", "Spermatids")
+keep_clusters <- c("GSC/Spermatogonia", "Primary Spermatocytes", "Spermatocytes", "Secondary Spermatocytes", "Spermatids", "Late spermatids")
 keep_clusters <- keep_clusters[keep_clusters %in% unique(seurat_final$celltype)]
 
 sce <- seurat_final %>% 

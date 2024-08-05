@@ -11,11 +11,7 @@ run_checks = "yes"
 if (run_checks == "yes"){
   
   metadata <- seurat_final@meta.data
-  #metadata$ploidy <- NA
-  #metadata$nsnps <- NA
-  
-  #thresholds <- data.frame(het = c(0,1,2,3), hom = c(0,2,4,6), nsnps = rep(c(0,5,10), each = 4))
-  thresholds <- data.frame(het = c(0), hom = c(0), nsnps = rep(c(0), each = 1))
+  thresholds <- data.frame(het = c(0,0,1), hom = c(0,1,3), nsnps = rep(c(0,5,5), each = 1))
   metadatas <- list()
   het_data_sum_save <- list()
   het_data_save <- list()
@@ -26,10 +22,10 @@ if (run_checks == "yes"){
     snps <- read.table(paste0("data/scAlleleCount/relaxed/", samp, "_snps.txt"))
     snps$snp_indx <- 1:nrow(snps)
     colnames(snps) <- c("Chr", "Pos", "Ref", "Alt", "snp_indx")
-    barcodes <- read.table(paste0("data/scAlleleCount/relaxed//data/", samp, "_barcodes.tsv"))[,1]
-    cov <- readMM(file = paste0("data/scAlleleCount/relaxed/data/", samp, "covmat.mtx"))
-    alt <- readMM(file = paste0("data/scAlleleCount/relaxed/data/", samp, "altmat.mtx"))
-    ref <- readMM(file = paste0("data/scAlleleCount/relaxed/data/", samp, "refmat.mtx"))
+    barcodes <- read.table(paste0("data/scAlleleCount/relaxed///data/", samp, "_barcodes.tsv"))[,1]
+    cov <- readMM(file = paste0("data/scAlleleCount/relaxed//data/", samp, "covmat.mtx"))
+    alt <- readMM(file = paste0("data/scAlleleCount/relaxed//data/", samp, "altmat.mtx"))
+    ref <- readMM(file = paste0("data/scAlleleCount/relaxed//data/", samp, "refmat.mtx"))
     
     #subsetting matrices for cells we have present in our seurat object
     cells <- match(paste0(samp, "_", barcodes), rownames(seurat_final@meta.data))
@@ -66,18 +62,19 @@ if (run_checks == "yes"){
         summarise( #summarise so hom is no of pos where homozygosity is 1 and het is no of pos where homozygosity is not 1
           homn = length(which(homozygosity %in% c(0,1) & covn > thresholds[tt,2])), 
           homd= sum(covn[homozygosity %in% c(0,1) & covn > thresholds[tt,2]]),
-          hetn = length(which(homozygosity > 0 & homozygosity < 1 & altn > thresholds[tt,1] & refn > thresholds[tt,1] & covn > thresholds[tt,2])),
+          hetn = length(which(homozygosity > 0 & homozygosity < 1 & altn > thresholds[tt,1] & refn > thresholds[tt,1])), #& covn > thresholds[tt,2])),
           hetd= sum(covn[!homozygosity %in% c(0,1) & covn > thresholds[tt,2]]),
           total_hethoms = (hetn + homn), 
           hethomd=homd+hetd,
           readsn = sum(covn),
           snpsn = length(unique(snp_indx)),
-          snpcov = sum(covn)/snpsn) %>% 
+          snpcov = hethomd/total_hethoms) %>% 
         mutate(heterozygosity = homn/total_hethoms)
       het_data_sum$coverage_check <- "OK"
       het_data_sum$coverage_check[het_data_sum$total_hethoms < thresholds[tt,3] | is.na(het_data_sum$snpsn)] <- "low_coverage"
       het_data_sum$sample <- samp
-      het_data_sum$depth_threshold <- thresholds[tt,1]
+      het_data_sum$het_threshold <- thresholds[tt,1] + 1
+      het_data_sum$hom_threshold <- thresholds[tt,2] + 1
       het_data_sum$snp_threshold <- thresholds[tt,3]
       
       
@@ -90,11 +87,11 @@ if (run_checks == "yes"){
   new_meta_data <- bind_rows(het_data_sum_save)
   new_meta_data <- new_meta_data %>%  
     merge(metadata, by.x = c('cell_barcode', 'sample'), by.y = c('cells', 'sample'), all.y = F)
-  new_meta_data$ploidy_class <- ifelse(new_meta_data$heterozygosity < 0.99, "diploid", "haploid")
+  new_meta_data$ploidy_class <- ifelse(new_meta_data$heterozygosity < 0.95, "diploid", "haploid")
   new_meta_data$ploidy_class[is.na(new_meta_data$ploidy_class)] <- "Missing"
   
   summary_table <- new_meta_data %>% 
-    group_by(depth_threshold, snp_threshold, celltype, ploidy_class) %>%
+    group_by(het_threshold, hom_threshold, snp_threshold, celltype, ploidy_class) %>%
     summarise(n =n())
   grid.table(summary_table)
   
@@ -103,40 +100,76 @@ if (run_checks == "yes"){
   load(file = "data/scAlleleCount//ploidy_params_check.RData")
 }
 
-bar_graph <- summary_table %>% 
-  ggplot(aes(x = celltype, fill = ploidy_class, y = n)) + 
-  geom_bar(stat = "identity") + 
-  facet_wrap(~depth_threshold + snp_threshold, nrow = 4)
-st_ss <- filter(summary_table, snp_threshold %in% c(5,10) & depth_threshold %in% c(c,1,2, 3)) %>% 
-  spread(ploidy_class, n) %>% 
-  mutate(total = sum(diploid, haploid, Missing), 
-         prop_diploid = diploid/total,
-         prop_haploid = haploid/total, 
-         prop_missing = Missing/total)
-row.names(st_ss) <- NULL
-png("plots/scAlleleCount_params_table.png", height = 30*nrow(st_ss), width = 120*ncol(st_ss))
-grid.table(st_ss, rows = NULL)
-dev.off()
 
-
-  
-ggsave("plots/ploidy_check.png", bar_graph, width = 40, height = 20, units = "in")
-
-write.table(summary_table, 'data/scAlleleCount/ploidy_check_summary.tsv', sep = '\t', quote = F, row.names = F)
-
-
+new_meta_data$celltype <- factor(new_meta_data$celltype, levels = 
+                                   c("Muscle", "Early cyst", "Late cyst", "GSC/Spermatogonia", 
+                                     "Primary spermatocytes", "Secondary spermatocytes", "Spermatids"))
 ###########################
 
-new_meta_data %>% 
+p1 <- new_meta_data %>% 
+  filter(snp_threshold ==0 & het_threshold ==1 & hom_threshold == 1) %>% 
   filter(Chr != "Chr_X") %>% 
-  filter(celltype %in% c("Early cyst", "Late cyst", "Muscle")) %>% 
-  ggplot(aes(x = snpcov, y = heterozygosity)) +
+  mutate(Ploidy = ploidy_class) %>% 
+  filter(celltype %in% c("Early cyst", "Late cyst", "Muscle", "GSC/Spermatogonia", "Primary spermatocytes")) %>% 
+  ggplot(aes(x = snpcov, y = heterozygosity, colour = Ploidy)) +
   geom_point(alpha = 0.5) + 
-  geom_smooth(method = "lm", colour = 'red') + 
-  stat_cor(method = 'spearman') + 
-  labs(y = "Heterozygosity", x = "Mean per-cell SNP coverage")
+  scale_colour_brewer(palette = 'Dark2') +
+  geom_smooth(method = "lm", colour = 'red', aes(group = 1)) + 
+  stat_cor(method = 'spearman', aes(group = 1)) + 
+  labs(y = "Heterozygosity", x = "Mean per-cell SNP coverage") + 
+  theme_classic() +  
+  theme(legend.position = 'none')
+  
+p2 <- new_meta_data %>% 
+  filter(snp_threshold ==0 & het_threshold ==1 & hom_threshold == 1) %>% 
+  mutate(Ploidy = ploidy_class) %>% 
+  filter(Chr != "Chr_X") %>% 
+  #filter(celltype %in% c("Early cyst", "Late cyst", "Muscle", "GSC/Spermatogonia", "Primary spermatocytes")) %>% 
+  ggplot(aes(x = celltype, fill = Ploidy)) + 
+  geom_bar(position = 'dodge') + 
+  scale_fill_brewer(palette = 'Dark2') + 
+  theme_classic() + 
+  labs(y = "Number of cells", x = "") + 
+  theme(legend.position = 'none', 
+        axis.text.x=element_blank())
 
+p3 <- new_meta_data %>% 
+  filter(snp_threshold ==5 & het_threshold == 1& hom_threshold == 2) %>% 
+  filter(Chr != "Chr_X") %>% 
+  mutate(Ploidy = ploidy_class) %>% 
+  filter(celltype %in% c("Early cyst", "Late cyst", "Muscle", "GSC/Spermatogonia", "Primary spermatocytes")) %>% 
+  ggplot(aes(x = snpcov, y = heterozygosity, colour = Ploidy)) +
+  geom_point(alpha = 0.2) + 
+  scale_colour_brewer(palette = 'Dark2') +
+  geom_smooth(method = "lm", colour = 'red', aes(group = 1)) + 
+  stat_cor(method = 'spearman', aes(group = 1)) + 
+  labs(y = "Heterozygosity", x = "Mean per-cell SNP coverage") + 
+  theme_classic() + 
+  theme(legend.position = 'none')
+p4 <- new_meta_data %>% 
+  filter(ploidy_class != "Missing") %>%
+  filter(snp_threshold ==5 & het_threshold == 1& hom_threshold == 2) %>% 
+  mutate(Ploidy = ploidy_class) %>% 
+  filter(Chr != "Chr_X") %>% 
+  #filter(celltype %in% c("Early cyst", "Late cyst", "Muscle", "GSC/Spermatogonia", "Primary spermatocytes")) %>% 
+  ggplot(aes(x = celltype, fill = Ploidy)) + 
+  geom_bar(position = 'dodge') + 
+  scale_fill_brewer(palette = 'Dark2') + 
+  theme_classic() + 
+  labs(y = "Number of cells", x = "") + 
+  guides(fill = guide_legend(title = "Predicted ploidy")) + 
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
 
+ab <- align_plots(p1,p2, align = 'h', axis = 'b')
+cd <- align_plots(p3,p4, align = 'h', axis = 'b')
+bd <- plot_grid(ab[[2]],cd[[2]], labels = c("(b)", "(d)"), align = 'v', 
+                axis = 'r', ncol = 1, label_x = -0.03, rel_heights = c(4,5))
+ac <- plot_grid(ab[[1]],cd[[1]], labels = c("(a)", "(c)"), align = 'v', 
+                axis = 'r', ncol = 1, label_x = -0.03, rel_heights = c(4,5))
+Ploidy_Sup <- plot_grid(ac, bd, rel_widths = c(3,4))
+
+ggsave("plots/Ploidy_Sup.pdf", Ploidy_Sup, width = 8, height = 8)
+system("open plots/Ploidy_Sup.pdf")
 
 ############################
 new_meta_data %>% 
@@ -156,7 +189,7 @@ new_meta_data %>%
 
 ################## JO COPY GRAPH ########################
 
-new_meta_data %>% filter(depth_threshold %in% c(0,3) & snp_threshold %in% c(0)) %>% 
+new_meta_data %>% 
   filter(coverage_check == "OK") %>% 
   ggplot(aes(x = log(hethomd), y = heterozygosity)) + 
   geom_point(alpha = 0.4) + 
