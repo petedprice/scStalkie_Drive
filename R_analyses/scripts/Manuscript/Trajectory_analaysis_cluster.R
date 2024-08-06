@@ -26,7 +26,7 @@ sce <- seurat_final %>%
   as.SingleCellExperiment(., assay = 'RNA')
 
 sce <- slingshot(sce, clusterLabels = 'celltype', reducedDim = "UMAP", start.clus = 'GSC/Spermatogonia',
-                 end.clus = 'Spermatids')
+                 end.clus = 'Late spermatids')
 
 counts <- counts(sce)[which(rowSums(counts(sce)) != 0),]
 pseudotime <- slingPseudotime(sce, na = FALSE)

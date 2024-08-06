@@ -223,3 +223,8 @@ tau_DGE %>%
   filter(abs(logFC > 1) & FDR < 0.05) %>% 
   filter(celltype %in% c("Secondary spermatocytes", "Spermatids")) %>% 
   View()
+
+
+
+
+
