@@ -1,0 +1,113 @@
+CFUN                    Collapsing functions for batch processing
+Extract.ff              Reading and writing vectors and arrays
+                        (high-level)
+Extract.ffdf            Reading and writing data.frames (ffdf)
+LimWarn                 ff Limitations and Warnings
+add                     Incrementing an ff or ram object
+array2vector            Array: make vector from array
+arrayIndex2vectorIndex
+                        Array: make vector positions from array index
+as.ff                   Coercing ram to ff and ff to ram objects
+as.ff.bit               Conversion between bit and ff boolean
+as.ffdf                 Coercing to ffdf and data.frame
+as.hi                   Hybrid Index, coercion to
+as.integer.hi           Hybrid Index, coercing from
+as.vmode                Coercing to virtual mode
+bigsample               Sampling from large pools
+chunk.ffdf              Chunk ff_vector and ffdf
+clone.ff                Cloning ff and ram objects
+clone.ffdf              Cloning ffdf objects
+close.ff                Closing ff files
+delete                  Deleting the file behind an ff object
+dim.ff                  Getting and setting dim and dimorder
+dimnames.ff             Getting and setting dimnames
+dimnames.ffdf           Getting and setting dimnames of ffdf
+dimorderCompatible      Test for dimorder compatibility
+dummy.dimnames          Array: make dimnames
+ff                      ff classes for representing (large) atomic data
+ffapply                 Apply for ff objects
+ffconform               Get most conforming argument
+ffdf                    ff class for data.frames
+ffdfindexget            Reading and writing ffdf data.frame using ff
+                        subscripts
+ffdfsort                Sorting: convenience wrappers for data.frames
+ffdrop                  Delete an ffarchive
+ffindexget              Reading and writing ff vectors using ff
+                        subscripts
+ffindexorder            Sorting: chunked ordering of integer suscript
+                        positions
+ffinfo                  Inspect content of ff saves
+ffload                  Reload ffSaved Datasets
+fforder                 Sorting: order from ff vectors
+ffreturn                Return suitable ff object
+ffsave                  Save R and ff objects
+ffsort                  Sorting of ff vectors
+ffsuitable              Test ff object for suitability
+ffxtensions             Test for availability of ff extensions
+file.resize             Change size of move an existing file
+filename                Get or set filename
+finalize                Call finalizer
+finalizer               Get and set finalizer (name)
+fixdiag                 Test for fixed diagonal
+geterror.ff             Get error and error string
+getpagesize             Get page size information
+getset.ff               Reading and writing vectors of values
+                        (low-level)
+hi                      Hybrid index class
+hiparse                 Hybrid Index, parsing
+is.ff                   Test for class ff
+is.ffdf                 Test for class ff
+is.open                 Test if object is opened
+is.readonly             Get readonly status
+is.sorted.default       Getting and setting 'is.sorted' physical
+                        attribute
+length.ff               Getting and setting length
+length.ffdf             Getting length of a ffdf dataframe
+length.hi               Hybrid Index, querying
+levels.ff               Getting and setting factor levels
+matcomb                 Array: make matrix indices from row and columns
+                        positions
+matprint                Print beginning and end of big matrix
+maxffmode               Lossless vmode coercability
+maxlength               Get physical length of an ff or ram object
+mismatch                Test for recycle mismatch
+na.count.ff             Getting and setting 'na.count' physical
+                        attribute
+names.ff                Getting and setting names
+nrow<-                  Assigning the number of rows or columns
+open.ff                 Opening an ff file
+pagesize                Pagesize of ff object
+physical.ff             Getting and setting physical and virtual
+                        attributes of ff objects
+physical.ffdf           Getting physical and virtual attributes of ffdf
+                        objects
+print.ff                Print and str methods
+ram2ffcode              Factor codings
+ramattribs              Get ramclass and ramattribs
+ramorder.default        Sorting: order R vector in-RAM and in-place
+ramsort.default         Sorting: Sort R vector in-RAM and in-place
+read.table.ffdf         Importing csv files into ff data.frames
+readwrite.ff            Reading and writing vectors (low-level)
+regtest.fforder         Sorting: regression tests
+repnam                  Replicate with names
+sortLevels              Factor level manipulation
+splitPathFile           Analyze pathfile-strings
+swap                    Reading and writing in one operation
+                        (high-level)
+symmIndex2vectorIndex   Array: make vector positions from symmetric
+                        array index
+symmetric               Test for symmetric structure
+unclass<-               Unclassed assignement
+undim                   Undim
+unsort                  Hybrid Index, internal utilities
+update.ff               Update ff content from another object
+vecprint                Print beginning and end of big vector
+vector.vmode            Create vector of virtual mode
+vector2array            Array: make array from vector
+vectorIndex2arrayIndex
+                        Array: make array from index vector positions
+vmode                   Virtual storage mode
+vmode.ffdf              Virtual storage mode of ffdf
+vt                      Virtual transpose
+vw                      Getting and setting virtual windows
+write.table.ffdf        Exporting csv files from ff data.frames

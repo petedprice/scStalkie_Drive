@@ -25,10 +25,10 @@ split_seurat <-list()
 for (sobj in seurat_objs){
 	load(sobj)
 	print("SCT transform")
-	#doublet_seurat <- SCTransform(doublet_seurat, vars.to.regress =
-        #                        c("nUMI","S.Score","G2M.Score"))
 	doublet_seurat <- SCTransform(doublet_seurat, vars.to.regress =
-                                c("mitoRatio","nUMI","S.Score","G2M.Score"))
+                                c("nUMI","mitoRatio"))
+#	doublet_seurat <- SCTransform(doublet_seurat, vars.to.regress =
+#                                c("mitoRatio","nUMI","S.Score","G2M.Score"))
 	split_seurat[[doublet_seurat$sample[1]]] <-doublet_seurat
 	
 }

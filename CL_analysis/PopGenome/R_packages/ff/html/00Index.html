@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html>
+<head><title>R: Memory-Efficient Storage of Large Data on Disk and Fast Access
+Functions</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body><div class="container">
+<h1> Memory-Efficient Storage of Large Data on Disk and Fast Access
+Functions
+<img class="toplogo" src="../../../doc/html/Rlogo.svg" alt="[R logo]" />
+</h1>
+<hr/>
+<div style="text-align: center;">
+<a href="../../../doc/html/packages.html"><img class="arrow" src="../../../doc/html/left.jpg" alt="[Up]" /></a>
+<a href="../../../doc/html/index.html"><img class="arrow" src="../../../doc/html/up.jpg" alt="[Top]" /></a>
+</div><h2>Documentation for package &lsquo;ff&rsquo; version 4.0.12</h2>
+
+<ul><li><a href="../DESCRIPTION">DESCRIPTION file</a>.</li>
+<li><a href="../NEWS">Package NEWS</a>.</li>
+</ul>
+
+<h2>Help Pages</h2>
+
+
+<p style="text-align: center;">
+<a href="#A">A</a>
+<a href="#B">B</a>
+<a href="#C">C</a>
+<a href="#D">D</a>
+<a href="#E">E</a>
+<a href="#F">F</a>
+<a href="#G">G</a>
+<a href="#H">H</a>
+<a href="#I">I</a>
+<a href="#K">K</a>
+<a href="#L">L</a>
+<a href="#M">M</a>
+<a href="#N">N</a>
+<a href="#O">O</a>
+<a href="#P">P</a>
+<a href="#Q">Q</a>
+<a href="#R">R</a>
+<a href="#S">S</a>
+<a href="#T">T</a>
+<a href="#U">U</a>
+<a href="#V">V</a>
+<a href="#W">W</a>
+<a href="#Y">Y</a>
+<a href="#misc">misc</a>
+</p>
+
+
+<h2><a id="A">-- A --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="add.html">add</a></td>
+<td>Incrementing an ff or ram object</td></tr>
+<tr><td style="width: 25%;"><a href="add.html">add.default</a></td>
+<td>Incrementing an ff or ram object</td></tr>
+<tr><td style="width: 25%;"><a href="add.html">add.ff</a></td>
+<td>Incrementing an ff or ram object</td></tr>
+<tr><td style="width: 25%;"><a href="sortLevels.html">appendLevels</a></td>
+<td>Factor level manipulation</td></tr>
+<tr><td style="width: 25%;"><a href="array2vector.html">array2vector</a></td>
+<td>Array: make vector from array</td></tr>
+<tr><td style="width: 25%;"><a href="arrayIndex2vectorIndex.html">arrayIndex2vectorIndex</a></td>
+<td>Array: make vector positions from array index</td></tr>
+<tr><td style="width: 25%;"><a href="as.ff.bit.html">as.bit.ff</a></td>
+<td>Conversion between bit and ff boolean</td></tr>
+<tr><td style="width: 25%;"><a href="as.integer.hi.html">as.bit.hi</a></td>
+<td>Hybrid Index, coercing from</td></tr>
+<tr><td style="width: 25%;"><a href="as.integer.hi.html">as.bitwhich.hi</a></td>
+<td>Hybrid Index, coercing from</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.boolean</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.boolean.default</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.byte</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.byte.default</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.integer.hi.html">as.character.hi</a></td>
+<td>Hybrid Index, coercing from</td></tr>
+<tr><td style="width: 25%;"><a href="as.ffdf.html">as.data.frame.ffdf</a></td>
+<td>Coercing to ffdf and data.frame</td></tr>
+<tr><td style="width: 25%;"><a href="as.ff.html">as.ff</a></td>
+<td>Coercing ram to ff and ff to ram objects</td></tr>
+<tr><td style="width: 25%;"><a href="as.ff.bit.html">as.ff.bit</a></td>
+<td>Conversion between bit and ff boolean</td></tr>
+<tr><td style="width: 25%;"><a href="as.ff.html">as.ff.default</a></td>
+<td>Coercing ram to ff and ff to ram objects</td></tr>
+<tr><td style="width: 25%;"><a href="as.ff.html">as.ff.ff</a></td>
+<td>Coercing ram to ff and ff to ram objects</td></tr>
+<tr><td style="width: 25%;"><a href="as.ffdf.html">as.ffdf</a></td>
+<td>Coercing to ffdf and data.frame</td></tr>
+<tr><td style="width: 25%;"><a href="as.ffdf.html">as.ffdf.data.frame</a></td>
+<td>Coercing to ffdf and data.frame</td></tr>
+<tr><td style="width: 25%;"><a href="as.ffdf.html">as.ffdf.ff_matrix</a></td>
+<td>Coercing to ffdf and data.frame</td></tr>
+<tr><td style="width: 25%;"><a href="as.ffdf.html">as.ffdf.ff_vector</a></td>
+<td>Coercing to ffdf and data.frame</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.(</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.bit</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.bitwhich</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.call</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.character</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.double</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.hi</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.integer</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.logical</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.matrix</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.name</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.NULL</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.ri</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.hi.html">as.hi.which</a></td>
+<td>Hybrid Index, coercion to</td></tr>
+<tr><td style="width: 25%;"><a href="as.integer.hi.html">as.integer.hi</a></td>
+<td>Hybrid Index, coercing from</td></tr>
+<tr><td style="width: 25%;"><a href="as.integer.hi.html">as.logical.hi</a></td>
+<td>Hybrid Index, coercing from</td></tr>
+<tr><td style="width: 25%;"><a href="as.integer.hi.html">as.matrix.hi</a></td>
+<td>Hybrid Index, coercing from</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.nibble</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.nibble.default</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.quad</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.quad.default</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.ff.html">as.ram</a></td>
+<td>Coercing ram to ff and ff to ram objects</td></tr>
+<tr><td style="width: 25%;"><a href="as.ff.html">as.ram.default</a></td>
+<td>Coercing ram to ff and ff to ram objects</td></tr>
+<tr><td style="width: 25%;"><a href="as.ff.html">as.ram.ff</a></td>
+<td>Coercing ram to ff and ff to ram objects</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.short</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.short.default</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.ubyte</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.ubyte.default</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.ushort</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.ushort.default</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.vmode</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.vmode.default</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.vmode.html">as.vmode.ff</a></td>
+<td>Coercing to virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="as.integer.hi.html">as.which.hi</a></td>
+<td>Hybrid Index, coercing from</td></tr>
+</table>
+
+<h2><a id="B">-- B --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="bigsample.html">bigsample</a></td>
+<td>Sampling from large pools</td></tr>
+<tr><td style="width: 25%;"><a href="bigsample.html">bigsample.default</a></td>
+<td>Sampling from large pools</td></tr>
+<tr><td style="width: 25%;"><a href="bigsample.html">bigsample.ff</a></td>
+<td>Sampling from large pools</td></tr>
+<tr><td style="width: 25%;"><a href="vector.vmode.html">boolean</a></td>
+<td>Create vector of virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="vector.vmode.html">byte</a></td>
+<td>Create vector of virtual mode</td></tr>
+</table>
+
+<h2><a id="C">-- C --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="CFUN.html">ccbind</a></td>
+<td>Collapsing functions for batch processing</td></tr>
+<tr><td style="width: 25%;"><a href="CFUN.html">CFUN</a></td>
+<td>Collapsing functions for batch processing</td></tr>
+<tr><td style="width: 25%;"><a href="CFUN.html">cfun</a></td>
+<td>Collapsing functions for batch processing</td></tr>
+<tr><td style="width: 25%;"><a href="chunk.ffdf.html">chunk.ffdf</a></td>
+<td>Chunk ff_vector and ffdf</td></tr>
+<tr><td style="width: 25%;"><a href="chunk.ffdf.html">chunk.ff_vector</a></td>
+<td>Chunk ff_vector and ffdf</td></tr>
+<tr><td style="width: 25%;"><a href="CFUN.html">clength</a></td>
+<td>Collapsing functions for batch processing</td></tr>
+<tr><td style="width: 25%;"><a href="clone.ff.html">clone.ff</a></td>
+<td>Cloning ff and ram objects</td></tr>
+<tr><td style="width: 25%;"><a href="clone.ffdf.html">clone.ffdf</a></td>
+<td>Cloning ffdf objects</td></tr>
+<tr><td style="width: 25%;"><a href="close.ff.html">close.ff</a></td>
+<td>Closing ff files</td></tr>
+<tr><td style="width: 25%;"><a href="close.ff.html">close.ffdf</a></td>
+<td>Closing ff files</td></tr>
+<tr><td style="width: 25%;"><a href="close.ff.html">close.ff_pointer</a></td>
+<td>Closing ff files</td></tr>
+<tr><td style="width: 25%;"><a href="CFUN.html">cmean</a></td>
+<td>Collapsing functions for batch processing</td></tr>
+<tr><td style="width: 25%;"><a href="CFUN.html">cmedian</a></td>
+<td>Collapsing functions for batch processing</td></tr>
+<tr><td style="width: 25%;"><a href="CFUN.html">cquantile</a></td>
+<td>Collapsing functions for batch processing</td></tr>
+<tr><td style="width: 25%;"><a href="CFUN.html">crbind</a></td>
+<td>Collapsing functions for batch processing</td></tr>
+<tr><td style="width: 25%;"><a href="CFUN.html">csum</a></td>
+<td>Collapsing functions for batch processing</td></tr>
+<tr><td style="width: 25%;"><a href="CFUN.html">csummary</a></td>
+<td>Collapsing functions for batch processing</td></tr>
+</table>
+
+<h2><a id="D">-- D --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="delete.html">delete</a></td>
+<td>Deleting the file behind an ff object</td></tr>
+<tr><td style="width: 25%;"><a href="delete.html">delete.default</a></td>
+<td>Deleting the file behind an ff object</td></tr>
+<tr><td style="width: 25%;"><a href="delete.html">delete.ff</a></td>
+<td>Deleting the file behind an ff object</td></tr>
+<tr><td style="width: 25%;"><a href="delete.html">delete.ffdf</a></td>
+<td>Deleting the file behind an ff object</td></tr>
+<tr><td style="width: 25%;"><a href="delete.html">delete.ff_pointer</a></td>
+<td>Deleting the file behind an ff object</td></tr>
+<tr><td style="width: 25%;"><a href="delete.html">deleteIfOpen</a></td>
+<td>Deleting the file behind an ff object</td></tr>
+<tr><td style="width: 25%;"><a href="delete.html">deleteIfOpen.ff</a></td>
+<td>Deleting the file behind an ff object</td></tr>
+<tr><td style="width: 25%;"><a href="delete.html">deleteIfOpen.ff_pointer</a></td>
+<td>Deleting the file behind an ff object</td></tr>
+<tr><td style="width: 25%;"><a href="ffdfsort.html">dforder</a></td>
+<td>Sorting: convenience wrappers for data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="ffdfsort.html">dfsort</a></td>
+<td>Sorting: convenience wrappers for data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dim.ff</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dim.ffdf</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dim&lt;-.ff</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dim&lt;-.ffdf</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dimnames.ff.html">dimnames.ff</a></td>
+<td>Getting and setting dimnames</td></tr>
+<tr><td style="width: 25%;"><a href="dimnames.ffdf.html">dimnames.ffdf</a></td>
+<td>Getting and setting dimnames of ffdf</td></tr>
+<tr><td style="width: 25%;"><a href="dimnames.ff.html">dimnames.ff_array</a></td>
+<td>Getting and setting dimnames</td></tr>
+<tr><td style="width: 25%;"><a href="dimnames.ffdf.html">dimnames&lt;-.ffdf</a></td>
+<td>Getting and setting dimnames of ffdf</td></tr>
+<tr><td style="width: 25%;"><a href="dimnames.ff.html">dimnames&lt;-.ff_array</a></td>
+<td>Getting and setting dimnames</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dimorder</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dimorder.default</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dimorder.ffdf</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dimorder.ff_array</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dimorder&lt;-</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dimorder&lt;-.ffdf</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dim.ff.html">dimorder&lt;-.ff_array</a></td>
+<td>Getting and setting dim and dimorder</td></tr>
+<tr><td style="width: 25%;"><a href="dimorderCompatible.html">dimorderCompatible</a></td>
+<td>Test for dimorder compatibility</td></tr>
+<tr><td style="width: 25%;"><a href="dimorderCompatible.html">dimorderStandard</a></td>
+<td>Test for dimorder compatibility</td></tr>
+<tr><td style="width: 25%;"><a href="dummy.dimnames.html">dummy.dimnames</a></td>
+<td>Array: make dimnames</td></tr>
+</table>
+
+<h2><a id="E">-- E --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="Extract.ff.html">Extract.ff</a></td>
+<td>Reading and writing vectors and arrays (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ffdf.html">Extract.ffdf</a></td>
+<td>Reading and writing data.frames (ffdf)</td></tr>
+</table>
+
+<h2><a id="F">-- F --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="ff.html">ff</a></td>
+<td>ff classes for representing (large) atomic data</td></tr>
+<tr><td style="width: 25%;"><a href="ffapply.html">ffapply</a></td>
+<td>Apply for ff objects</td></tr>
+<tr><td style="width: 25%;"><a href="ffapply.html">ffcolapply</a></td>
+<td>Apply for ff objects</td></tr>
+<tr><td style="width: 25%;"><a href="ffconform.html">ffconform</a></td>
+<td>Get most conforming argument</td></tr>
+<tr><td style="width: 25%;"><a href="ffdf.html">ffdf</a></td>
+<td>ff class for data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="ffdfindexget.html">ffdfindexget</a></td>
+<td>Reading and writing ffdf data.frame using ff subscripts</td></tr>
+<tr><td style="width: 25%;"><a href="ffdfindexget.html">ffdfindexset</a></td>
+<td>Reading and writing ffdf data.frame using ff subscripts</td></tr>
+<tr><td style="width: 25%;"><a href="ffdfsort.html">ffdforder</a></td>
+<td>Sorting: convenience wrappers for data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="ffdfsort.html">ffdfsort</a></td>
+<td>Sorting: convenience wrappers for data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="ffdrop.html">ffdrop</a></td>
+<td>Delete an ffarchive</td></tr>
+<tr><td style="width: 25%;"><a href="ffindexget.html">ffindexget</a></td>
+<td>Reading and writing ff vectors using ff subscripts</td></tr>
+<tr><td style="width: 25%;"><a href="ffindexorder.html">ffindexorder</a></td>
+<td>Sorting: chunked ordering of integer suscript positions</td></tr>
+<tr><td style="width: 25%;"><a href="ffindexorder.html">ffindexordersize</a></td>
+<td>Sorting: chunked ordering of integer suscript positions</td></tr>
+<tr><td style="width: 25%;"><a href="ffindexget.html">ffindexset</a></td>
+<td>Reading and writing ff vectors using ff subscripts</td></tr>
+<tr><td style="width: 25%;"><a href="ffinfo.html">ffinfo</a></td>
+<td>Inspect content of ff saves</td></tr>
+<tr><td style="width: 25%;"><a href="ffload.html">ffload</a></td>
+<td>Reload ffSaved Datasets</td></tr>
+<tr><td style="width: 25%;"><a href="fforder.html">fforder</a></td>
+<td>Sorting: order from ff vectors</td></tr>
+<tr><td style="width: 25%;"><a href="ffreturn.html">ffreturn</a></td>
+<td>Return suitable ff object</td></tr>
+<tr><td style="width: 25%;"><a href="ffapply.html">ffrowapply</a></td>
+<td>Apply for ff objects</td></tr>
+<tr><td style="width: 25%;"><a href="ffsave.html">ffsave</a></td>
+<td>Save R and ff objects</td></tr>
+<tr><td style="width: 25%;"><a href="ffsave.html">ffsave.image</a></td>
+<td>Save R and ff objects</td></tr>
+<tr><td style="width: 25%;"><a href="ffsort.html">ffsort</a></td>
+<td>Sorting of ff vectors</td></tr>
+<tr><td style="width: 25%;"><a href="ffsuitable.html">ffsuitable</a></td>
+<td>Test ff object for suitability</td></tr>
+<tr><td style="width: 25%;"><a href="ffsuitable.html">ffsuitable_attribs</a></td>
+<td>Test ff object for suitability</td></tr>
+<tr><td style="width: 25%;"><a href="ffxtensions.html">ffsymmxtensions</a></td>
+<td>Test for availability of ff extensions</td></tr>
+<tr><td style="width: 25%;"><a href="splitPathFile.html">fftempfile</a></td>
+<td>Analyze pathfile-strings</td></tr>
+<tr><td style="width: 25%;"><a href="ffapply.html">ffvecapply</a></td>
+<td>Apply for ff objects</td></tr>
+<tr><td style="width: 25%;"><a href="ffxtensions.html">ffxtensions</a></td>
+<td>Test for availability of ff extensions</td></tr>
+<tr><td style="width: 25%;"><a href="ff.html">ff_pointer</a></td>
+<td>ff classes for representing (large) atomic data</td></tr>
+<tr><td style="width: 25%;"><a href="file.resize.html">file.move</a></td>
+<td>Change size of move an existing file</td></tr>
+<tr><td style="width: 25%;"><a href="file.resize.html">file.resize</a></td>
+<td>Change size of move an existing file</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">filename</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">filename.default</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">filename.ffdf</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">filename.ff_pointer</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">filename&lt;-</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">filename&lt;-.ff</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="finalize.html">finalize</a></td>
+<td>Call finalizer</td></tr>
+<tr><td style="width: 25%;"><a href="finalize.html">finalize.ff</a></td>
+<td>Call finalizer</td></tr>
+<tr><td style="width: 25%;"><a href="finalize.html">finalize.ffdf</a></td>
+<td>Call finalizer</td></tr>
+<tr><td style="width: 25%;"><a href="finalize.html">finalize.ff_pointer</a></td>
+<td>Call finalizer</td></tr>
+<tr><td style="width: 25%;"><a href="finalizer.html">finalizer</a></td>
+<td>Get and set finalizer (name)</td></tr>
+<tr><td style="width: 25%;"><a href="finalizer.html">finalizer.ff</a></td>
+<td>Get and set finalizer (name)</td></tr>
+<tr><td style="width: 25%;"><a href="finalizer.html">finalizer&lt;-</a></td>
+<td>Get and set finalizer (name)</td></tr>
+<tr><td style="width: 25%;"><a href="finalizer.html">finalizer&lt;-.ff</a></td>
+<td>Get and set finalizer (name)</td></tr>
+<tr><td style="width: 25%;"><a href="fixdiag.html">fixdiag</a></td>
+<td>Test for fixed diagonal</td></tr>
+<tr><td style="width: 25%;"><a href="fixdiag.html">fixdiag.default</a></td>
+<td>Test for fixed diagonal</td></tr>
+<tr><td style="width: 25%;"><a href="fixdiag.html">fixdiag.dist</a></td>
+<td>Test for fixed diagonal</td></tr>
+<tr><td style="width: 25%;"><a href="fixdiag.html">fixdiag.ff</a></td>
+<td>Test for fixed diagonal</td></tr>
+<tr><td style="width: 25%;"><a href="fixdiag.html">fixdiag&lt;-</a></td>
+<td>Test for fixed diagonal</td></tr>
+</table>
+
+<h2><a id="G">-- G --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="getset.ff.html">get.ff</a></td>
+<td>Reading and writing vectors of values (low-level)</td></tr>
+<tr><td style="width: 25%;"><a href="getpagesize.html">getalignedpagesize</a></td>
+<td>Get page size information</td></tr>
+<tr><td style="width: 25%;"><a href="getpagesize.html">getdefaultpagesize</a></td>
+<td>Get page size information</td></tr>
+<tr><td style="width: 25%;"><a href="geterror.ff.html">geterror.ff</a></td>
+<td>Get error and error string</td></tr>
+<tr><td style="width: 25%;"><a href="geterror.ff.html">geterrstr.ff</a></td>
+<td>Get error and error string</td></tr>
+<tr><td style="width: 25%;"><a href="getpagesize.html">getpagesize</a></td>
+<td>Get page size information</td></tr>
+<tr><td style="width: 25%;"><a href="getset.ff.html">getset.ff</a></td>
+<td>Reading and writing vectors of values (low-level)</td></tr>
+</table>
+
+<h2><a id="H">-- H --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="hi.html">hi</a></td>
+<td>Hybrid index class</td></tr>
+<tr><td style="width: 25%;"><a href="hiparse.html">hiparse</a></td>
+<td>Hybrid Index, parsing</td></tr>
+</table>
+
+<h2><a id="I">-- I --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="levels.ff.html">is.factor</a></td>
+<td>Getting and setting factor levels</td></tr>
+<tr><td style="width: 25%;"><a href="levels.ff.html">is.factor.default</a></td>
+<td>Getting and setting factor levels</td></tr>
+<tr><td style="width: 25%;"><a href="levels.ff.html">is.factor.ff</a></td>
+<td>Getting and setting factor levels</td></tr>
+<tr><td style="width: 25%;"><a href="is.ff.html">is.ff</a></td>
+<td>Test for class ff</td></tr>
+<tr><td style="width: 25%;"><a href="is.ffdf.html">is.ffdf</a></td>
+<td>Test for class ff</td></tr>
+<tr><td style="width: 25%;"><a href="is.open.html">is.open</a></td>
+<td>Test if object is opened</td></tr>
+<tr><td style="width: 25%;"><a href="is.open.html">is.open.ff</a></td>
+<td>Test if object is opened</td></tr>
+<tr><td style="width: 25%;"><a href="is.open.html">is.open.ffdf</a></td>
+<td>Test if object is opened</td></tr>
+<tr><td style="width: 25%;"><a href="is.open.html">is.open.ff_pointer</a></td>
+<td>Test if object is opened</td></tr>
+<tr><td style="width: 25%;"><a href="levels.ff.html">is.ordered</a></td>
+<td>Getting and setting factor levels</td></tr>
+<tr><td style="width: 25%;"><a href="levels.ff.html">is.ordered.default</a></td>
+<td>Getting and setting factor levels</td></tr>
+<tr><td style="width: 25%;"><a href="levels.ff.html">is.ordered.ff</a></td>
+<td>Getting and setting factor levels</td></tr>
+<tr><td style="width: 25%;"><a href="is.readonly.html">is.readonly</a></td>
+<td>Get readonly status</td></tr>
+<tr><td style="width: 25%;"><a href="is.readonly.html">is.readonly.ff</a></td>
+<td>Get readonly status</td></tr>
+<tr><td style="width: 25%;"><a href="is.sorted.html">is.sorted.default</a></td>
+<td>Getting and setting 'is.sorted' physical attribute</td></tr>
+<tr><td style="width: 25%;"><a href="is.sorted.html">is.sorted&lt;-.default</a></td>
+<td>Getting and setting 'is.sorted' physical attribute</td></tr>
+</table>
+
+<h2><a id="K">-- K --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="ramorder.default.html">keyorder.default</a></td>
+<td>Sorting: order R vector in-RAM and in-place</td></tr>
+<tr><td style="width: 25%;"><a href="ramsort.default.html">keysort.default</a></td>
+<td>Sorting: Sort R vector in-RAM and in-place</td></tr>
+</table>
+
+<h2><a id="L">-- L --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="length.ff.html">length.ff</a></td>
+<td>Getting and setting length</td></tr>
+<tr><td style="width: 25%;"><a href="length.ffdf.html">length.ffdf</a></td>
+<td>Getting length of a ffdf dataframe</td></tr>
+<tr><td style="width: 25%;"><a href="length.hi.html">length.hi</a></td>
+<td>Hybrid Index, querying</td></tr>
+<tr><td style="width: 25%;"><a href="length.ff.html">length&lt;-.ff</a></td>
+<td>Getting and setting length</td></tr>
+<tr><td style="width: 25%;"><a href="levels.ff.html">levels.ff</a></td>
+<td>Getting and setting factor levels</td></tr>
+<tr><td style="width: 25%;"><a href="levels.ff.html">levels&lt;-.ff</a></td>
+<td>Getting and setting factor levels</td></tr>
+<tr><td style="width: 25%;"><a href="LimWarn.html">LimWarn</a></td>
+<td>ff Limitations and Warnings</td></tr>
+</table>
+
+<h2><a id="M">-- M --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="matcomb.html">matcomb</a></td>
+<td>Array: make matrix indices from row and columns positions</td></tr>
+<tr><td style="width: 25%;"><a href="matprint.html">matprint</a></td>
+<td>Print beginning and end of big matrix</td></tr>
+<tr><td style="width: 25%;"><a href="maxffmode.html">maxffmode</a></td>
+<td>Lossless vmode coercability</td></tr>
+<tr><td style="width: 25%;"><a href="length.hi.html">maxindex.hi</a></td>
+<td>Hybrid Index, querying</td></tr>
+<tr><td style="width: 25%;"><a href="maxlength.html">maxlength</a></td>
+<td>Get physical length of an ff or ram object</td></tr>
+<tr><td style="width: 25%;"><a href="maxlength.html">maxlength.default</a></td>
+<td>Get physical length of an ff or ram object</td></tr>
+<tr><td style="width: 25%;"><a href="maxlength.html">maxlength.ff</a></td>
+<td>Get physical length of an ff or ram object</td></tr>
+<tr><td style="width: 25%;"><a href="ramorder.default.html">mergeorder.default</a></td>
+<td>Sorting: order R vector in-RAM and in-place</td></tr>
+<tr><td style="width: 25%;"><a href="ramsort.default.html">mergesort.default</a></td>
+<td>Sorting: Sort R vector in-RAM and in-place</td></tr>
+<tr><td style="width: 25%;"><a href="mismatch.html">mismatch</a></td>
+<td>Test for recycle mismatch</td></tr>
+</table>
+
+<h2><a id="N">-- N --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="na.count.html">na.count.default</a></td>
+<td>Getting and setting 'na.count' physical attribute</td></tr>
+<tr><td style="width: 25%;"><a href="na.count.html">na.count.ff</a></td>
+<td>Getting and setting 'na.count' physical attribute</td></tr>
+<tr><td style="width: 25%;"><a href="na.count.html">na.count&lt;-.default</a></td>
+<td>Getting and setting 'na.count' physical attribute</td></tr>
+<tr><td style="width: 25%;"><a href="na.count.html">na.count&lt;-.ff</a></td>
+<td>Getting and setting 'na.count' physical attribute</td></tr>
+<tr><td style="width: 25%;"><a href="names.ff.html">names.ff</a></td>
+<td>Getting and setting names</td></tr>
+<tr><td style="width: 25%;"><a href="dimnames.ffdf.html">names.ffdf</a></td>
+<td>Getting and setting dimnames of ffdf</td></tr>
+<tr><td style="width: 25%;"><a href="names.ff.html">names.ff_array</a></td>
+<td>Getting and setting names</td></tr>
+<tr><td style="width: 25%;"><a href="names.ff.html">names&lt;-.ff</a></td>
+<td>Getting and setting names</td></tr>
+<tr><td style="width: 25%;"><a href="dimnames.ffdf.html">names&lt;-.ffdf</a></td>
+<td>Getting and setting dimnames of ffdf</td></tr>
+<tr><td style="width: 25%;"><a href="names.ff.html">names&lt;-.ff_array</a></td>
+<td>Getting and setting names</td></tr>
+<tr><td style="width: 25%;"><a href="nrowAssign.html">ncol&lt;-</a></td>
+<td>Assigning the number of rows or columns</td></tr>
+<tr><td style="width: 25%;"><a href="vector.vmode.html">nibble</a></td>
+<td>Create vector of virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="nrowAssign.html">nrow&lt;-</a></td>
+<td>Assigning the number of rows or columns</td></tr>
+</table>
+
+<h2><a id="O">-- O --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="open.ff.html">open.ff</a></td>
+<td>Opening an ff file</td></tr>
+<tr><td style="width: 25%;"><a href="open.ff.html">open.ffdf</a></td>
+<td>Opening an ff file</td></tr>
+</table>
+
+<h2><a id="P">-- P --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="pagesize.html">pagesize</a></td>
+<td>Pagesize of ff object</td></tr>
+<tr><td style="width: 25%;"><a href="pagesize.html">pagesize.ff</a></td>
+<td>Pagesize of ff object</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">pattern</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">pattern.ff</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">pattern&lt;-</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">pattern&lt;-.ff</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="filename.html">pattern&lt;-.ffdf</a></td>
+<td>Get or set filename</td></tr>
+<tr><td style="width: 25%;"><a href="physical.ff.html">physical.ff</a></td>
+<td>Getting and setting physical and virtual attributes of ff objects</td></tr>
+<tr><td style="width: 25%;"><a href="physical.ffdf.html">physical.ffdf</a></td>
+<td>Getting physical and virtual attributes of ffdf objects</td></tr>
+<tr><td style="width: 25%;"><a href="physical.ff.html">physical&lt;-.ff</a></td>
+<td>Getting and setting physical and virtual attributes of ff objects</td></tr>
+<tr><td style="width: 25%;"><a href="length.hi.html">poslength.hi</a></td>
+<td>Hybrid Index, querying</td></tr>
+<tr><td style="width: 25%;"><a href="print.ff.html">print.ff</a></td>
+<td>Print and str methods</td></tr>
+<tr><td style="width: 25%;"><a href="print.ff.html">print.ffdf</a></td>
+<td>Print and str methods</td></tr>
+<tr><td style="width: 25%;"><a href="print.ff.html">print.ff_matrix</a></td>
+<td>Print and str methods</td></tr>
+<tr><td style="width: 25%;"><a href="print.ff.html">print.ff_vector</a></td>
+<td>Print and str methods</td></tr>
+<tr><td style="width: 25%;"><a href="hi.html">print.hi</a></td>
+<td>Hybrid index class</td></tr>
+<tr><td style="width: 25%;"><a href="matprint.html">print.matprint</a></td>
+<td>Print beginning and end of big matrix</td></tr>
+<tr><td style="width: 25%;"><a href="vecprint.html">print.vecprint</a></td>
+<td>Print beginning and end of big vector</td></tr>
+</table>
+
+<h2><a id="Q">-- Q --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="vector.vmode.html">quad</a></td>
+<td>Create vector of virtual mode</td></tr>
+</table>
+
+<h2><a id="R">-- R --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="ramorder.default.html">radixorder.default</a></td>
+<td>Sorting: order R vector in-RAM and in-place</td></tr>
+<tr><td style="width: 25%;"><a href="ramsort.default.html">radixsort.default</a></td>
+<td>Sorting: Sort R vector in-RAM and in-place</td></tr>
+<tr><td style="width: 25%;"><a href="ram2ffcode.html">ram2ffcode</a></td>
+<td>Factor codings</td></tr>
+<tr><td style="width: 25%;"><a href="ram2ffcode.html">ram2ramcode</a></td>
+<td>Factor codings</td></tr>
+<tr><td style="width: 25%;"><a href="ramattribs.html">ramattribs</a></td>
+<td>Get ramclass and ramattribs</td></tr>
+<tr><td style="width: 25%;"><a href="ramattribs.html">ramattribs.default</a></td>
+<td>Get ramclass and ramattribs</td></tr>
+<tr><td style="width: 25%;"><a href="ramattribs.html">ramattribs.ff</a></td>
+<td>Get ramclass and ramattribs</td></tr>
+<tr><td style="width: 25%;"><a href="ramattribs.html">ramattribs_excludes</a></td>
+<td>Get ramclass and ramattribs</td></tr>
+<tr><td style="width: 25%;"><a href="ramattribs.html">ramclass</a></td>
+<td>Get ramclass and ramattribs</td></tr>
+<tr><td style="width: 25%;"><a href="ramattribs.html">ramclass.default</a></td>
+<td>Get ramclass and ramattribs</td></tr>
+<tr><td style="width: 25%;"><a href="ramattribs.html">ramclass.ff</a></td>
+<td>Get ramclass and ramattribs</td></tr>
+<tr><td style="width: 25%;"><a href="ramattribs.html">ramclass_excludes</a></td>
+<td>Get ramclass and ramattribs</td></tr>
+<tr><td style="width: 25%;"><a href="ffdfsort.html">ramdforder</a></td>
+<td>Sorting: convenience wrappers for data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="ffdfsort.html">ramdfsort</a></td>
+<td>Sorting: convenience wrappers for data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="ramorder.default.html">ramorder.default</a></td>
+<td>Sorting: order R vector in-RAM and in-place</td></tr>
+<tr><td style="width: 25%;"><a href="ramsort.default.html">ramsort.default</a></td>
+<td>Sorting: Sort R vector in-RAM and in-place</td></tr>
+<tr><td style="width: 25%;"><a href="read.table.ffdf.html">read.csv.ffdf</a></td>
+<td>Importing csv files into ff data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="read.table.ffdf.html">read.csv2.ffdf</a></td>
+<td>Importing csv files into ff data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="read.table.ffdf.html">read.delim.ffdf</a></td>
+<td>Importing csv files into ff data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="read.table.ffdf.html">read.delim2.ffdf</a></td>
+<td>Importing csv files into ff data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="readwrite.ff.html">read.ff</a></td>
+<td>Reading and writing vectors (low-level)</td></tr>
+<tr><td style="width: 25%;"><a href="read.table.ffdf.html">read.table.ffdf</a></td>
+<td>Importing csv files into ff data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="readwrite.ff.html">readwrite.ff</a></td>
+<td>Reading and writing vectors (low-level)</td></tr>
+<tr><td style="width: 25%;"><a href="sortLevels.html">recodeLevels</a></td>
+<td>Factor level manipulation</td></tr>
+<tr><td style="width: 25%;"><a href="sortLevels.html">recodeLevels.factor</a></td>
+<td>Factor level manipulation</td></tr>
+<tr><td style="width: 25%;"><a href="sortLevels.html">recodeLevels.ff</a></td>
+<td>Factor level manipulation</td></tr>
+<tr><td style="width: 25%;"><a href="regtest.fforder.html">regtest.fforder</a></td>
+<td>Sorting: regression tests</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">regtest.vmode</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="repnam.html">repnam</a></td>
+<td>Replicate with names</td></tr>
+<tr><td style="width: 25%;"><a href="dimnames.ffdf.html">row.names.ffdf</a></td>
+<td>Getting and setting dimnames of ffdf</td></tr>
+<tr><td style="width: 25%;"><a href="dimnames.ffdf.html">row.names&lt;-.ffdf</a></td>
+<td>Getting and setting dimnames of ffdf</td></tr>
+</table>
+
+<h2><a id="S">-- S --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="getset.ff.html">set.ff</a></td>
+<td>Reading and writing vectors of values (low-level)</td></tr>
+<tr><td style="width: 25%;"><a href="ramorder.default.html">shellorder.default</a></td>
+<td>Sorting: order R vector in-RAM and in-place</td></tr>
+<tr><td style="width: 25%;"><a href="ramsort.default.html">shellsort.default</a></td>
+<td>Sorting: Sort R vector in-RAM and in-place</td></tr>
+<tr><td style="width: 25%;"><a href="vector.vmode.html">short</a></td>
+<td>Create vector of virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="sortLevels.html">sortLevels</a></td>
+<td>Factor level manipulation</td></tr>
+<tr><td style="width: 25%;"><a href="sortLevels.html">sortLevels.factor</a></td>
+<td>Factor level manipulation</td></tr>
+<tr><td style="width: 25%;"><a href="sortLevels.html">sortLevels.ff</a></td>
+<td>Factor level manipulation</td></tr>
+<tr><td style="width: 25%;"><a href="sortLevels.html">sortLevels.ffdf</a></td>
+<td>Factor level manipulation</td></tr>
+<tr><td style="width: 25%;"><a href="splitPathFile.html">splitPathFile</a></td>
+<td>Analyze pathfile-strings</td></tr>
+<tr><td style="width: 25%;"><a href="splitPathFile.html">standardPathFile</a></td>
+<td>Analyze pathfile-strings</td></tr>
+<tr><td style="width: 25%;"><a href="print.ff.html">str.ff</a></td>
+<td>Print and str methods</td></tr>
+<tr><td style="width: 25%;"><a href="print.ff.html">str.ffdf</a></td>
+<td>Print and str methods</td></tr>
+<tr><td style="width: 25%;"><a href="hi.html">str.hi</a></td>
+<td>Hybrid index class</td></tr>
+<tr><td style="width: 25%;"><a href="unsort.html">subscript2integer</a></td>
+<td>Hybrid Index, internal utilities</td></tr>
+<tr><td style="width: 25%;"><a href="swap.html">swap</a></td>
+<td>Reading and writing in one operation (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="swap.html">swap.default</a></td>
+<td>Reading and writing in one operation (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="swap.html">swap.ff</a></td>
+<td>Reading and writing in one operation (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="swap.html">swap.ff_array</a></td>
+<td>Reading and writing in one operation (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="symmetric.html">symmetric</a></td>
+<td>Test for symmetric structure</td></tr>
+<tr><td style="width: 25%;"><a href="symmetric.html">symmetric.default</a></td>
+<td>Test for symmetric structure</td></tr>
+<tr><td style="width: 25%;"><a href="symmetric.html">symmetric.dist</a></td>
+<td>Test for symmetric structure</td></tr>
+<tr><td style="width: 25%;"><a href="symmetric.html">symmetric.ff</a></td>
+<td>Test for symmetric structure</td></tr>
+<tr><td style="width: 25%;"><a href="symmIndex2vectorIndex.html">symmIndex2vectorIndex</a></td>
+<td>Array: make vector positions from symmetric array index</td></tr>
+</table>
+
+<h2><a id="T">-- T --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="vt.html">t.ff</a></td>
+<td>Virtual transpose</td></tr>
+<tr><td style="width: 25%;"><a href="splitPathFile.html">tempPathFile</a></td>
+<td>Analyze pathfile-strings</td></tr>
+</table>
+
+<h2><a id="U">-- U --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="vector.vmode.html">ubyte</a></td>
+<td>Create vector of virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="unclass_-.html">unclass&lt;-</a></td>
+<td>Unclassed assignement</td></tr>
+<tr><td style="width: 25%;"><a href="undim.html">undim</a></td>
+<td>Undim</td></tr>
+<tr><td style="width: 25%;"><a href="unsort.html">unsort</a></td>
+<td>Hybrid Index, internal utilities</td></tr>
+<tr><td style="width: 25%;"><a href="unsort.html">unsort.ahi</a></td>
+<td>Hybrid Index, internal utilities</td></tr>
+<tr><td style="width: 25%;"><a href="unsort.html">unsort.hi</a></td>
+<td>Hybrid Index, internal utilities</td></tr>
+<tr><td style="width: 25%;"><a href="splitPathFile.html">unsplitPathFile</a></td>
+<td>Analyze pathfile-strings</td></tr>
+<tr><td style="width: 25%;"><a href="update.ff.html">update.ff</a></td>
+<td>Update ff content from another object</td></tr>
+<tr><td style="width: 25%;"><a href="update.ff.html">update.ffdf</a></td>
+<td>Update ff content from another object</td></tr>
+<tr><td style="width: 25%;"><a href="vector.vmode.html">ushort</a></td>
+<td>Create vector of virtual mode</td></tr>
+</table>
+
+<h2><a id="V">-- V --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="vecprint.html">vecprint</a></td>
+<td>Print beginning and end of big vector</td></tr>
+<tr><td style="width: 25%;"><a href="vector.vmode.html">vector.vmode</a></td>
+<td>Create vector of virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="vector.vmode.html">vector.vmode.default</a></td>
+<td>Create vector of virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="vector.vmode.html">vector.vmode.ff</a></td>
+<td>Create vector of virtual mode</td></tr>
+<tr><td style="width: 25%;"><a href="vector2array.html">vector2array</a></td>
+<td>Array: make array from vector</td></tr>
+<tr><td style="width: 25%;"><a href="dimorderCompatible.html">vectorCompatible</a></td>
+<td>Test for dimorder compatibility</td></tr>
+<tr><td style="width: 25%;"><a href="vectorIndex2arrayIndex.html">vectorIndex2arrayIndex</a></td>
+<td>Array: make array from index vector positions</td></tr>
+<tr><td style="width: 25%;"><a href="dimorderCompatible.html">vectorStandard</a></td>
+<td>Test for dimorder compatibility</td></tr>
+<tr><td style="width: 25%;"><a href="physical.ff.html">virtual.ff</a></td>
+<td>Getting and setting physical and virtual attributes of ff objects</td></tr>
+<tr><td style="width: 25%;"><a href="physical.ffdf.html">virtual.ffdf</a></td>
+<td>Getting physical and virtual attributes of ffdf objects</td></tr>
+<tr><td style="width: 25%;"><a href="physical.ff.html">virtual&lt;-.ff</a></td>
+<td>Getting and setting physical and virtual attributes of ff objects</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">vmode</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">vmode.default</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">vmode.ff</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.ffdf.html">vmode.ffdf</a></td>
+<td>Virtual storage mode of ffdf</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">vmode&lt;-</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">vmode&lt;-.default</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">vmode&lt;-.ff</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vt.html">vt</a></td>
+<td>Virtual transpose</td></tr>
+<tr><td style="width: 25%;"><a href="vt.html">vt.default</a></td>
+<td>Virtual transpose</td></tr>
+<tr><td style="width: 25%;"><a href="vt.html">vt.ff</a></td>
+<td>Virtual transpose</td></tr>
+<tr><td style="width: 25%;"><a href="vw.html">vw</a></td>
+<td>Getting and setting virtual windows</td></tr>
+<tr><td style="width: 25%;"><a href="vw.html">vw.default</a></td>
+<td>Getting and setting virtual windows</td></tr>
+<tr><td style="width: 25%;"><a href="vw.html">vw.ff</a></td>
+<td>Getting and setting virtual windows</td></tr>
+<tr><td style="width: 25%;"><a href="vw.html">vw&lt;-</a></td>
+<td>Getting and setting virtual windows</td></tr>
+<tr><td style="width: 25%;"><a href="vw.html">vw&lt;-.ff_array</a></td>
+<td>Getting and setting virtual windows</td></tr>
+<tr><td style="width: 25%;"><a href="vw.html">vw&lt;-.ff_vector</a></td>
+<td>Getting and setting virtual windows</td></tr>
+</table>
+
+<h2><a id="W">-- W --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="write.table.ffdf.html">write.csv</a></td>
+<td>Exporting csv files from ff data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="write.table.ffdf.html">write.csv.ffdf</a></td>
+<td>Exporting csv files from ff data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="write.table.ffdf.html">write.csv2</a></td>
+<td>Exporting csv files from ff data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="write.table.ffdf.html">write.csv2.ffdf</a></td>
+<td>Exporting csv files from ff data.frames</td></tr>
+<tr><td style="width: 25%;"><a href="readwrite.ff.html">write.ff</a></td>
+<td>Reading and writing vectors (low-level)</td></tr>
+<tr><td style="width: 25%;"><a href="write.table.ffdf.html">write.table.ffdf</a></td>
+<td>Exporting csv files from ff data.frames</td></tr>
+</table>
+
+<h2><a id="Y">-- Y --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="mismatch.html">ymismatch</a></td>
+<td>Test for recycle mismatch</td></tr>
+</table>
+
+<h2><a id="misc">-- misc --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="Extract.ffdf.html">$.ffdf</a></td>
+<td>Reading and writing data.frames (ffdf)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ffdf.html">$&lt;-.ffdf</a></td>
+<td>Reading and writing data.frames (ffdf)</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.ffbytes</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.ffmode</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.rambytes</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.rammode</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.vcoerceable</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.vimplemented</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.vmax</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.vmin</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.vmode</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.vNA</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.vunsigned</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="vmode.html">.vvalues</a></td>
+<td>Virtual storage mode</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ff.html">[.ff</a></td>
+<td>Reading and writing vectors and arrays (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ffdf.html">[.ffdf</a></td>
+<td>Reading and writing data.frames (ffdf)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ff.html">[.ff_array</a></td>
+<td>Reading and writing vectors and arrays (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ff.html">[&lt;-.ff</a></td>
+<td>Reading and writing vectors and arrays (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ffdf.html">[&lt;-.ffdf</a></td>
+<td>Reading and writing data.frames (ffdf)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ff.html">[&lt;-.ff_array</a></td>
+<td>Reading and writing vectors and arrays (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ff.html">[[.ff</a></td>
+<td>Reading and writing vectors and arrays (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ffdf.html">[[.ffdf</a></td>
+<td>Reading and writing data.frames (ffdf)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ff.html">[[&lt;-.ff</a></td>
+<td>Reading and writing vectors and arrays (high-level)</td></tr>
+<tr><td style="width: 25%;"><a href="Extract.ffdf.html">[[&lt;-.ffdf</a></td>
+<td>Reading and writing data.frames (ffdf)</td></tr>
+</table>
+</div></body></html>

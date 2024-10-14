@@ -22,7 +22,6 @@ process seurat_filter {
     cat ${params.gtf_dir}/${ref}.gtf | grep $mt | grep gene_id > ss.gtf
     cut -f9 ss.gtf | cut -d ";" -f1 | cut -d " " -f2 | uniq | sed 's/"//g' > mt_genes.txt
 
-
     cat ${params.metadata} | grep ${sample} > metadata_ss.csv   
 
     Rscript ${projectDir}/Rscripts/seurat/seurat_filter.R \

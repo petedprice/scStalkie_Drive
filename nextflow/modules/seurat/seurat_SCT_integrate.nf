@@ -17,6 +17,7 @@ process seurat_SCT_integrate {
 
     script:
     """
+
     #!/bin/bash
     echo ${task.memory}
     Rscript ${projectDir}/Rscripts/seurat/SCT_integrate.R \

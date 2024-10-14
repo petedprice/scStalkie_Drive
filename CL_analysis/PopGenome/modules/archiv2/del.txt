@@ -1,0 +1,2 @@
+Contig 	100	dog
+Contig	99	echo

@@ -7,6 +7,8 @@ process ws_var_call_splitNCR {
     errorStrategy 'retry'
     memory { 64.GB * task.attempt }
 
+    publishDir 'dup_NCR_clean_bam', mode: 'copy', overwrite: true, pattern: '*dup_NCR.bam'
+
     input:
     tuple val(species), val(sample), file("${sample}_duplicates.bam"), val(ref)
 

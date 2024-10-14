@@ -17,9 +17,9 @@ datapath = args[2]
 output_path = args[3]
 metadata_nf=read.csv(args[4], header = F)
 mt_genes=read.table(args[5])
-nfs=args[6]
-mtr=args[7]
-gu=args[8]
+nfs=as.numeric(args[6])
+mtr=as.numeric(args[7])
+gu=as.numeric(args[8])
 mt_genes$V1 <- gsub("_", "-", mt_genes$V1)
 print(metadata_nf)
 samples <- metadata_nf[,1]
@@ -71,7 +71,8 @@ merged_seurat@meta.data <- metadata #Save the more complete metadat to the seura
 #FILTERING DATA
 filtered_seurat <- subset(x = merged_seurat, 
                             (log10GenesPerUMI > gu) & # Can be dying cells or simple cell types such as blood cells
-                            (mitoRatio < mtr))
+                            (mitoRatio < mtr)) #& 
+#				(nGene < 7000))
 metadata_clean <- filtered_seurat@meta.data
 
 outdatapath = paste(output_path, "/outdata", sep = "")

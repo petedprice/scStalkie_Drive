@@ -26,7 +26,6 @@ process seurat_doublet {
 	${params.cellcycle_markers} \
 	TRUE \
 	${projectDir}
-
  	
     mv outdata/doublet_seurat.RData .
     

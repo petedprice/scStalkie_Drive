@@ -86,10 +86,10 @@ workflow {
 	cleaned=ws_var_call_cleanup(counted)
 	splitNCRed=ws_var_call_splitNCR(cleaned.combine(species_ch, by: 0))
 	ws_VCed=ws_var_call_HC(splitNCRed)
-	VFs=ws_var_call_VF_stringent(ws_VCed)
-	VFr=ws_var_call_VF_relaxed(ws_VCed)
-	var_called_sc=sc_var_call(VFr)
-	var_filtered_sc=R_var_filtering(var_called_sc)
+	//VFs=ws_var_call_VF_stringent(ws_VCed)
+	//VFr=ws_var_call_VF_relaxed(ws_VCed)
+	//var_called_sc=sc_var_call(VFr)
+	//var_filtered_sc=R_var_filtering(var_called_sc)
     }
 
     if (params.clus_var_call == 'TRUE'){

@@ -1,0 +1,94 @@
+Achaz.stats-methods     Achaz statistic
+BayeScanR               An R implementation of BayeScan (Foll &
+                        Gagiotti 2008)
+F_ST.stats-methods      Fixation Index
+F_ST.stats.2-methods    Fixation Index (2)
+GENOME-class            Class "GENOME"
+GFF_split_into_scaffolds
+                        Split a GFF file into multiple scaffold-GFFs
+MKT-methods             McDonald-Kreitman Test (McDonald & Kreitman
+                        1991)
+MS                      Coalescent simulation with or without selection
+MS_getStats             Get the simulated MS/MSMS statistics
+PG_plot.biallelic.matrix-methods
+                        Plot the biallelic matrix
+PopGenome               PopGenome
+PopGplot                Smoothed line-plot for multiple populations
+VCF_split_into_scaffolds
+                        Split a VCF file into multiple scaffold-VCFs
+Whop_readVCF            Reading tabixed VCF files (an interface to
+                        WhopGenome)
+calc.R2-methods         Linkage statistics (R2, P-value, Distance)
+calc.fixed.shared-methods
+                        Fixed and shared polymorphisms
+codontable              Prints the codon table which is used in the
+                        PopGenome framework
+concatenate.classes     Concatenate GENOME classes
+concatenate.regions     Concatenate regions
+count.unknowns-methods
+                        Calculate missing nucleotide frequencies
+create.PopGenome.method
+                        Integration of own functions into the
+                        PopGenome-framework
+detail.stats-methods    Several statistics
+diversity.stats-methods
+                        Diversities
+diversity.stats.between-methods
+                        Diversities
+fasta_file              FASTA file (subdirectory "data")
+get.biallelic.matrix-methods
+                        Get the biallelic matrix
+get.codons-methods      Detailed information about the nature of codon
+                        changes
+get.feature.names       Feature informations and GFF-attributes
+get.individuals-methods
+                        Print the names/IDs of individuals
+get.status-methods      State of calculations
+getBayes-methods        Get values for BayeScanR
+get_gff_info            Annotation info
+gff_file                GFF file (subdirectory "data")
+introgression.stats-methods
+                        Introgression statistics
+jack.knife.transform,GENOME-method
+                        Jacknife Transformation
+linkage.stats-methods   Linkage Disequilibrium
+load.session            Loading a PopGenome session
+mult.linkage.stats-methods
+                        Multilocus linkage statistics
+neutrality.stats-methods
+                        Neutrality Statistics
+read.big.fasta          Reading large FASTA alignments
+readData                Read alignments and calculate summary data
+readHapMap              Read SNP data from the HapMap consortium
+readMS                  Read output data from MS and MSMS
+readSNP                 Read data in .SNP format
+readVCF                 Read SNP data in tabixed VCF format
+recomb.stats-methods    Recombination statistics
+region.as.fasta-methods
+                        Extract a region and write it to a FASTA file
+save.session            Save the '"GENOME"' object of a PopGenome
+                        session
+set.filter-methods      Setting filter to the analysis
+set.outgroup-methods    Define an outgroup
+set.populations-methods
+                        Define populations
+set.ref.positions-methods
+                        Set reference positions for SNP data
+set.synnonsyn-methods   Set synonymous positions for SNP data
+show.slots-methods      Show Slots of class GENOME
+sliding.window.transform-methods
+                        Sliding Window Transformation
+snp_file                .SNP file (variant call data from 1001
+                        Arabidopsis Genomes project)
+split_data_into_GFF_attributes
+                        Split the data into GFF attributes
+split_data_into_GFF_features
+                        Split the data into GFF features
+splitting.data-methods
+                        Split data into subsites
+sweeps.stats-methods    Selective Sweeps
+test.params-class       Set parameters for coalescent simulations with
+                        Hudson's MS and Ewing's MSMS.
+vcf_file                VCF file (subdirectory "data")
+weighted.jackknife-methods
+                        Weighted Jackknife
