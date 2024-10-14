@@ -19,7 +19,17 @@ nextflow run /users/bop20pp/personal_git/scStalkie_Drive/CL_analysis/PopGenome/m
 
 
 main.nf is the main pipeline script 
+
+
 it calls modules from the folder 'modules' or 'modules/gatk'
+
+
+
 some of these modules call scripts from the 'scripts' folder 
+
+
 you may need to modify the nextflow.config file to change directories for where containers are stored etc
+
+
+
 enjoy!
