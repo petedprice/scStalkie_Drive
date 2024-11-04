@@ -61,3 +61,5 @@ seurat_final@meta.data %>%
   mutate(binom = ifelse(celltype == "Early cyst", 0, 1)) %>%
   glmer(binom ~ treatment + (1|sample), family = "binomial", data = .) %>%
   summary()
+
+

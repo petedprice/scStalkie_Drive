@@ -23,6 +23,9 @@ rm(list = ls())
 load("data/RData/seurat_final.RData")
 DefaultAssay(seurat_final) <- "RNA"
 Idents(seurat_final) <- "celltype"
+ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
+ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
+  ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
 
 ### MARKERS using FindAllMarkers ###
 markers <- seurat_final %>% 

@@ -72,7 +72,7 @@ Idents(seurat_integrated_ss) <- res
 DefaultAssay(seurat_integrated_ss) <- "RNA"
 
 markers <- read.xlsx("data/MANUSCRIPT/Drive Manuscript Supplementary Tables.xlsx", sheet = 2)[,c(1:6)] %>% 
-  filter(`DOI.(Source)` != "https://doi.org/10.1038/s41467-021-20897-y")
+  filter(`DOI.(Source)` != "https://doi.org/10.1038/s41467-021-20897-y" & !is.na(Cell.type))
 
 m = "Cell.type"
 clusters <- str_split(markers[,m], ",") %>% unlist() %>% #remove space at start of string
@@ -138,28 +138,27 @@ dmp <- DimPlot(seurat_integrated_ss, label = T)
 ggsave("plots/tdal_markers_dimplot_clus_ss.pdf", dmp, height = 10, width = 10)
 
 
-main_figure_markers <- markers$T.dal.Ortholog[markers$Key.Marker == "Yes"] %>% 
+Figure_marker_names_df <- data.frame(matrix(nrow = 33))
+Figure_marker_names_df$tdal <- markers$T.dal.Ortholog %>% 
   gsub("_", "-", .) %>% 
   gsub(" ", "", .) %>% 
   unique() %>% 
-  strsplit(",") %>% unlist() %>% 
+  strsplit(",") %>% unlist()
+Figure_marker_names_df$dros <- Figure_marker_names_df$tdal %>% 
   lapply(., function(x)(grep(x, new_names))) %>% unlist() %>% 
-  new_names[.] %>% 
-  .[c(16,5,15,7,2,1,3,6,10,11,4,8,14)] #reversed
+  new_names[.]
 
+main_figure_markers_indx <- c(20,25,24,23,22,21,10,13,29,17,27,28,31)
+main_figure_markers <- Figure_marker_names_df$dros[main_figure_markers_indx]
+names(main_figure_markers) <- Figure_marker_names_df$tdal[main_figure_markers_indx]
 main_figure_markers <- factor(main_figure_markers, levels = rev(main_figure_markers))
 
-all_figure_markers <- markers$T.dal.Ortholog %>% 
-  gsub("_", "-", .) %>% 
-  gsub(" ", "", .) %>% 
-  unique() %>% 
-  strsplit(",") %>% unlist() %>% 
-  lapply(., function(x)(grep(x, new_names))) %>% unlist() %>% 
-  new_names[.] %>% 
-  .[c(16,1,2,7,15,5,25,18,20,30,31,3,22,29,6,28,13,17,4,21,8,10,14)]
+
+all_figure_markers_indx <- c(20,33,25,24,23,22,21,2,3,4,7,8,10,11,12,13,15,30,17,26,27,14,28,31)
+all_figure_markers <- Figure_marker_names_df$dros[all_figure_markers_indx]
+names(all_figure_markers) <- Figure_marker_names_df$tdal[all_figure_markers_indx]
 
 ### Plotting key markers against numbered cell clusters for assignment ---
-
 Idents(seurat_integrated_ss) <- seurat_integrated_ss$integrated_snn_res.0.4
 dps_all_figure <- DotPlot(seurat_integrated_ss, features = names(main_figure_markers), assay = "RNA")+coord_flip() +
   scale_x_discrete(labels = as.vector((main_figure_markers)))
@@ -193,12 +192,12 @@ if (res == "integrated_snn_res.0.4"){
   Spermatids <- c(22,15,3,10,11)
 }
 
-seurat_final <- CellSelector(DimPlot(seurat_final), seurat_final, "outliers1")
-seurat_final <- CellSelector(DimPlot(seurat_final), seurat_final, "outliers2")
+#seurat_final <- CellSelector(DimPlot(seurat_final), seurat_final, "outliers1")
+#seurat_final <- CellSelector(DimPlot(seurat_final), seurat_final, "outliers2")
 
 
-DotPlot(seurat_final, features = names(main_figure_markers), assay = "RNA")+coord_flip() +
-  scale_x_discrete(labels = as.vector((main_figure_markers)))
+#DotPlot(seurat_final, features = names(main_figure_markers), assay = "RNA")+coord_flip() +
+#  scale_x_discrete(labels = as.vector((main_figure_markers)))
 
 seurat_integrated_ss@meta.data$celltype <- 'NA'
 seurat_integrated_ss$celltype[seurat_integrated_ss$integrated_snn_res.0.4 %in% Muscle] <- "Muscle"
@@ -216,6 +215,7 @@ Idents(seurat_final) <- "celltype"
 levels(seurat_final) <- c("Muscle", "Early cyst", "Late cyst", 
                                   "GSC/Spermatogonia", "Primary spermatocytes", 
                                   "Secondary spermatocytes", "Spermatids")
+
 
 save(seurat_final, main_figure_markers, all_figure_markers, file = 'data/RData/seurat_final.RData')
 

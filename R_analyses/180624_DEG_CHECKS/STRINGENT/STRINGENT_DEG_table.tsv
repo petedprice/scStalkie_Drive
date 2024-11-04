@@ -1,0 +1,28 @@
+celltype	Significant	n
+Muscle	NS	2171
+Muscle	SR bias	6
+Muscle	ST bias	7
+Pre-meiotic 
+cyst	NS	7765
+Pre-meiotic 
+cyst	SR bias	4
+Pre-meiotic 
+cyst	ST bias	2
+Post-meiotic 
+cyst	NS	8653
+Post-meiotic 
+cyst	SR bias	8
+Post-meiotic 
+cyst	ST bias	4
+GSC/Spermatogonia	NS	8790
+GSC/Spermatogonia	SR bias	146
+GSC/Spermatogonia	ST bias	509
+Primary Spermatocytes	NS	8074
+Primary Spermatocytes	SR bias	4
+Primary Spermatocytes	ST bias	10
+Secondary Spermatocytes	NS	7110
+Secondary Spermatocytes	SR bias	17
+Secondary Spermatocytes	ST bias	7
+Spermatids	NS	5903
+Spermatids	SR bias	23
+Spermatids	ST bias	34

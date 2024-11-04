@@ -20,11 +20,22 @@ rm(list = ls())
 
 #### LOAD DATA AND PREP DATA ---
 load("data/RData/seurat_final.RData")
+load("data/RData/DEG_DC.RData")
+load("data/trajectory/sce_GAMed.RData")
+load("data/RData/traj_analyis.RData")
+
+Idents(seurat_final) <- "celltype"
+levels(seurat_final) <- c("Muscle", "Early cyst", "Late cyst", 
+                          "GSC/Spermatogonia", "Primary spermatocytes", 
+                          "Secondary spermatocytes", "Spermatids")
+seurat_final@meta.data <- seurat_final@meta.data %>%  
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
+                                                "Late cyst", "GSC/Spermatogonia", 
+                                                "Primary spermatocytes", "Secondary spermatocytes", 
+                                                "Spermatids")))
 
 DefaultAssay(seurat_final) <- "RNA"
 
-
-Idents(seurat_final) <- "celltype"
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
@@ -38,24 +49,16 @@ Agenes <- filter(ortholog_table, chr %in% c("Chr_1", "Chr_2"))$REF_GENE_NAME %>%
 
 nFeatures_RNA_autosomes <- colSums(seurat_final@assays$RNA$counts[Agenes,] > 0)
 seurat_final <- AddMetaData(seurat_final, nFeatures_RNA_autosomes, 'nFeature_RNA_autosomes')
+
 X_exp <- PercentageFeatureSet(seurat_final, features = Xgenes)
 seurat_final <- AddMetaData(seurat_final, X_exp, 'X_exp')
 
-A_exp <- PercentageFeatureSet(seurat_final, features = Agenes)
-seurat_final <- AddMetaData(seurat_final, A_exp, 'A_exp')
-
 Xgene_prop <- colSums(seurat_final@assays$RNA$counts[Xgenes,] > 1)/
   colSums(seurat_final@assays$RNA$counts > 1)
-nXgene <- colSums(seurat_final@assays$RNA$counts[Xgenes,] > 1)
-nXprop_toX <- colSums(seurat_final@assays$RNA$counts[Xgenes,] > 1)/
-  colSums(seurat_final@assays$RNA$counts[Xgenes,])
-
 seurat_final <- AddMetaData(object = seurat_final, metadata = Xgene_prop, col.name = 'Xprop')
 
-seurat_final <- AddMetaData(seurat_final, X_exp < 10, 'Y_cells')
-seurat_final <- AddMetaData(seurat_final, nXgene, 'nXgene')
-seurat_final <- AddMetaData(seurat_final, nXprop_toX, 'nXprop_toX')
 
+### TITLE CHANGES FOR PLOTS ###
 gene_names <- names(main_figure_markers)
 mfms <- stringr::str_split(main_figure_markers, "\\(", simplify = T)[,1]
 mfms[13] <- 'cup'
@@ -63,67 +66,59 @@ names(mfms) <- gene_names
 
 gene_names_all_markers <- names(all_figure_markers)
 afms <- stringr::str_split(all_figure_markers, "\\(", simplify = T)[,1]
-afms[23] <- 'cup'
+afms[24] <- 'cup'
 names(afms) <- gene_names_all_markers
-
-
-##################################################
 
 rm_axis = theme(axis.title.x=element_blank(),
                 axis.text.x=element_blank(),
-                axis.ticks.x=element_blank())
+                axis.ticks.x=element_blank(),
+                axis.line.x=element_blank())
 
 
-############## FIGURE 1 --------------------------
-levels(seurat_final) <- c("Muscle", "Early cyst", "Late cyst", 
-                          "GSC/Spermatogonia", "Primary spermatocytes", 
-                          "Secondary spermatocytes", "Spermatids")
-dps_all_figure <- DotPlot(seurat_final, features = names(mfms), assay = "RNA")+coord_flip() +
-  scale_x_discrete(labels = as.vector((mfms))) + 
-  labs(y = '', x = "Marker gene expression") + 
-  theme_classic() + 
-  scale_colour_gradientn(colours = colorspace::diverge_hcl(8), 
-                         labels = ) + 
-  theme(legend.position="right", 
-        legend.box = "horizontol") + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1), 
-        axis.title=element_text(size=13))
-
-
+######################### MAIN FIGURE PLOTS ######################### 
 
 cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "yellow3", "#0072B2", "#D55E00", "#CC79A7")
 
+expected_X_exp <- filter(ortholog_table, chr == "Chr_X") %>%
+  dplyr::select(REF_GENE_NAME) %>% 
+  unique() %>% nrow()
+expected_A_exp <- filter(ortholog_table, chr %in% c("Chr_1", "Chr_2")) %>%
+  dplyr::select(REF_GENE_NAME) %>% 
+  unique() %>% nrow()
+expected_expression = expected_X_exp/(expected_A_exp + expected_X_exp)
+
+dps_all_figure <- DotPlot(seurat_final, features = names(mfms), assay = "RNA")+coord_flip() +
+  scale_x_discrete(labels = as.vector((mfms))) + 
+  labs(y = '', x = "Marker gene expression") + 
+  theme_classic() + scale_colour_gradientn(colours = colorspace::diverge_hcl(8)) + 
+  theme(legend.position="right", legend.box = "vertical", 
+        axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black")) + 
+  guides(color = guide_colorbar(title = 'Scaled expression'), 
+        size = guide_legend(title = '% of cells expressed'))
+  
+
+
 nfeatures_figure <- seurat_final@meta.data %>% 
-  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
-                                                "Late cyst", "GSC/Spermatogonia", 
-                                                "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>% 
   ggplot(aes(x = celltype, y = nFeature_RNA_autosomes, fill = celltype)) +
   geom_boxplot(outlier.alpha = 0.2) + 
-  theme_classic() + scale_fill_manual(values= cbPalette) + labs(
-    x = "", y = "N\u00b0 detected autosomal genes") + 
-  theme(legend.position="none") + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1), 
-        axis.title=element_text(size=13))
+  theme_classic() + scale_fill_manual(values= cbPalette) + 
+  labs(x = "", y = "N\u00b0 expressed  \n autosomal genes") + 
+  theme(legend.position="none", 
+        axis.line.x = element_blank()) + rm_axis
 
-
-
-# theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 UMAP <- DimPlot(seurat_final, cols = cbPalette, group.by = 'celltype', label = T) + 
   labs(x = "UMAP 1", y = "UMAP 2") + 
   theme(legend.position="none")
-UMAP2 <- UMAP[[1]]$data %>% 
-  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
-                                                "Late cyst", "GSC/Spermatogonia", 
-                                                "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>% 
+UMAP_final <- UMAP[[1]]$data %>% 
   ggplot(aes(x = umap_1, y = umap_2, colour = celltype)) + 
   geom_point(stroke = NA, size = .7) + scale_color_manual(values= cbPalette) + 
   guides(colour = guide_legend(override.aes = list(size=3), title = "Cell type")) + 
   theme_classic() + labs(x = "UMAP 1", y = "UMAP 2", legend = 'Cell type') +
-  theme(legend.position = 'none', 
-        axis.title=element_text(size=15)) + 
+  theme(legend.position = 'none', legend.box = "vertical", 
+        axis.text.x = element_text(color="black"), 
+        axis.ticks = element_line(color = "black")) +
   shadowtext::geom_shadowtext(data = UMAP[[1]]$layers[[2]]$data, aes(label = celltype), colour = 'black', 
                               size = 4, nudge_y = -0.5, nudge_x = 0, 
                               bg.color = 'white', bg.r = 0.1, bg.size = 0.5, 
@@ -131,64 +126,7 @@ UMAP2 <- UMAP[[1]]$data %>%
   geom_point(data = UMAP[[1]]$layers[[2]]$data, aes(x = umap_1, y = umap_2+0.1), colour = 'black',
              stroke = 1, size = 2, shape = 21, fill = 'white')
 
-
-
-Fig1 <- 
-  plot_grid(UMAP2, plot_grid(dps_all_figure + rm_axis, nfeatures_figure, nrow = 2, 
-                                   align = 'v', labels = c("B", "C"), 
-                                   label_x = -0.01), 
-                  nrow = 1, align = 'h', rel_widths = c(1, 0.7, 0.7), axis = 't', 
-                  labels =c("A", "")) 
-
-
-ggsave("plots/FIG1_MarkersUMAPFeatures.pdf", Fig1, height = 9, width =14)
-system("open plots/FIG1_MarkersUMAPFeatures.pdf")
-
-
-
-S1a <- DimPlot(seurat_final, group.by = 'Phase') + 
-  labs(title = "Cell-cycle Phase") + 
-  labs(x = "UMAP 1", y = "UMAP 2")
-
-S1b <- DotPlot(seurat_final, features = names(afms), assay = "RNA")+
-  scale_x_discrete(labels = as.vector((afms))) + coord_flip() +
-  labs(y = '', x = "Marker genes expression") + 
-  theme_classic() + 
-  scale_colour_gradientn(colours = colorspace::diverge_hcl(8), 
-                         labels = ) + 
-  theme(legend.position="right", 
-        legend.box = "horizontol") + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1), 
-        axis.title=element_text(size=13))
-
-S1c <- seurat_final@meta.data %>% 
-  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
-                                                "Late cyst", "GSC/Spermatogonia", 
-                                                "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>% 
-  ggplot(aes(x = celltype, y = nFeature_RNA, fill = celltype)) +
-  geom_boxplot(outlier.alpha = 0.2) + 
-  theme_classic() + scale_fill_manual(values= cbPalette) + labs(
-    x = "", y = "N\u00b0 detected genes") + 
-  theme(legend.position="none") + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1), 
-        axis.title=element_text(size=13))
-  
-
-FigS1 <- plot_grid(S1a, plot_grid(S1b + rm_axis, S1c, nrow = 2, 
-                                   align = 'v', labels = c("B", "C"), 
-                                   rel_heights = c(2.2,2)), 
-                  nrow = 1, align = 'h', rel_widths = c(1, 0.7), axis = 't', 
-                  labels =c("A", "")) 
-ggsave("plots/FIGS1_MarkersUMAPFeatures.pdf", FigS1, height = 9, width =20)
-system("open plots/FIGS1_MarkersUMAPFeatures.pdf")
-
-
-
-############## FIGURE 2--------------------------
-load("data/RData/DEG_DC.RData")
-
-#test of normality 
+# DC Plot #
 check_normalities <- 
   XA %>% mutate(ratio = XA) %>% 
   filter(Chr == "X") %>% 
@@ -217,10 +155,9 @@ ST_wilcox_results <- XA %>%
   ) %>% 
   mutate(treatment = "ST")
 
+
 DC_plot <- XA %>% 
-  filter(Chr == "X") %>% 
-  filter(logcpm >= 1) %>% 
-  filter(treatment == "ST") %>% 
+  filter(Chr == "X" & logcpm >= 1 & treatment == "ST") %>% 
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
@@ -228,31 +165,24 @@ DC_plot <- XA %>%
   mutate(Chromosome = Chr) %>% 
   ggplot(aes(x = celltype, y = (XA), fill = treatment)) + geom_boxplot(outlier.alpha = 0.2) + 
   labs(x = "", y = "log(CPM)", fill = "Chromosome") + #add sig values between Chrs
-  geom_hline(yintercept = c(0,-1), linetype = 'dashed', colour = 'black') + 
+  geom_hline(yintercept = c(0,-1), linetype = 'dashed', colour = 'black', linewidth = 0.7) + 
   
   theme_classic() + scale_fill_brewer(palette = 'Set2') + 
-  scale_y_continuous(breaks=c(0.0, 5.0, 10.0, 15.0, 20.0)) + 
-  rm_axis + theme(legend.position="right") + 
+  scale_y_continuous(breaks=c(-5,-1,0.0,5.0), limits = c(-5,8.5)) + 
   guides(fill = 'none') +
-  ylab(expression(log[2]~X:A~ratio)) + 
-  geom_text(data = ST_wilcox_results, aes(x = celltype, y = 9, label = significance),
-            vjust = -0.5, size = 5) + 
-  ylim(-5,10)
-
-expected_X_exp <- filter(ortholog_table, chr == "Chr_X") %>%
-  dplyr::select(REF_GENE_NAME) %>% 
-  unique() %>% nrow()
-expected_A_exp <- filter(ortholog_table, chr %in% c("Chr_1", "Chr_2")) %>%
-  dplyr::select(REF_GENE_NAME) %>% 
-  unique() %>% nrow()
-line = expected_X_exp/(expected_A_exp + expected_X_exp)
-
+  ylab(expression(log[2]~X:A~expression~ratio)) + 
+  geom_text(data = ST_wilcox_results, aes(x = celltype, y = 8, label = significance),
+            vjust = -0.5, size = 5)  + 
+  theme(axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black"))
+  
+# XCI Plot #
 
 XCI_wilcox_results <- seurat_final@meta.data %>%
   filter(treatment == "ST") %>% 
   group_by(celltype, treatment) %>%
   summarise(
-    p_value = wilcox.test(Xprop, mu = line, alternative = 'two.sided')$p.value
+    p_value = wilcox.test(Xprop, mu = expected_expression, alternative = 'two.sided')$p.value
   ) %>%
   mutate(
     significance = case_when(
@@ -264,33 +194,69 @@ XCI_wilcox_results <- seurat_final@meta.data %>%
   )
 
 
-XCI_plot <- seurat_final@meta.data %>% 
-  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
-                                                "Late cyst", "GSC/Spermatogonia", 
-                                                "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>% 
-  filter(treatment == "ST") %>% 
-  ggplot(aes(x = celltype, y = Xprop, fill = treatment)) + geom_violin() +
-  theme_classic() + scale_fill_brewer(palette = 'Set2') + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) +
-  #geom_hline(yintercept = line, linetype = 'dashed', colour = 'black') +
-  guides(fill = 'none') +
-  #geom_text(data = XCI_wilcox_results, aes(x = celltype, y = 0.22, label = significance),
-  #          vjust = -0.5, size = 5) +
-  #ylim(0.05,0.25) +
-  labs(y = "N\u00b0 expressed X genes / \n N\u00b0 expressed genes", x = "")
+
+#traj plots 
+cbPalette <- c("yellow3", "#0072B2", "#D55E00", "#CC79A7")
+
+traj_umap <- ggplot() + 
+  geom_point(data = Pseudotime_data, aes(x = umap_1, y = umap_2, colour = Pseudotime), alpha = 0.3, stroke = NA) + 
+  geom_path(data = traj_line[[1]], aes(x = umap_1, y = umap_2), colour = 'black', size = 0.8, alpha = 0.7) +
+  theme_classic() +
+  scale_color_continuous(low = "purple", high = "orange") + 
+  labs(x = "UMAP 1", y = "UMAP 2") + 
+  theme(legend.position = c(0.8, 0.75))
+
+traj_nfeatures <- Pseudotime_data[Pseudotime_data$treatment == "ST",]  %>% 
+  ggplot(aes(x = Pseudotime, y = nFeature_RNA_autosomes, colour = `Cell type`)) + 
+  geom_point(alpha = 0.2, stroke=NA) + scale_colour_manual(values= cbPalette) +
+  theme_classic() + 
+  geom_line(stat = 'smooth', aes(x =Pseudotime, y = nFeature_RNA_autosomes, colour = NA),  colour = 'black', method = 'loess', se = F, 
+            alpha = 0.7, size = 1) + 
+  labs(y = "N\u00b0 expressed \nautosomal genes", x = "") + 
+  theme(legend.position = 'none', 
+        legend.background=element_blank()) + rm_axis
 
 
+traj_XoverAll <- Pseudotime_data[Pseudotime_data$treatment == "ST",] %>% 
+  ggplot(., aes(x = Pseudotime, y = Xprop, colour = `Cell type`)) + 
+  geom_point(alpha = 0.2, stroke = NA) + scale_colour_manual(values= cbPalette) +
+  geom_line(stat = 'smooth', aes(x =Pseudotime, y = Xprop, colour = NA),  colour = 'black', method = 'loess', se = F, 
+            alpha = 0.7, size = 1) + 
+  theme_classic() + 
+  theme(legend.position = 'none', 
+        legend.background=element_blank()) +
+  labs(y ="N\u00b0 expressed X genes / \n N\u00b0 total expressed genes", x = "") + rm_axis
 
-Genomic_activity <- cowplot::plot_grid(DC_plot, XCI_plot, ncol = 1, align="v", rel_heights = 
-                                         c(1,1.2),labels = c("A", "B"),
-                                       hjust = -0.5)
-ggsave("plots/FIG2_Genomic_activity.pdf", Genomic_activity, height = 7, width = 4)
-system("open plots/FIG2_Genomic_activity.pdf")
+traj_XoverAll_SR <- Pseudotime_data %>% 
+  mutate(Treatment = factor(treatment, levels = c("ST", "SR"))) %>% 
+  ggplot(., aes(x = Pseudotime, y = Xprop)) + 
+  #geom_point(alpha = 0.01, aes(colour = `Cell type`)) + scale_colour_manual(values= cbPalette) +
+  guides(colour = 'none') + 
+  ggnewscale::new_scale_color() + 
+  geom_smooth(method = 'loess', alpha = 0.5, size = 1, 
+              aes(color = Treatment, fill = Treatment, ymax = after_stat(y + se * sqrt(length(y))),
+                  ymin = after_stat(y - se * sqrt(length(y))))) + 
+  guides(colour= guide_legend(override.aes=list(fill=NA))) +
+  scale_colour_brewer(palette = "Set2") +
+  scale_fill_brewer(palette = 'Set2') +
+ theme_classic() + 
+ theme(legend.position = 'top', 
+      legend.background=element_blank()) +
+  
+ labs(y ="N\u00b0 expressed X genes / \n N\u00b0 total expressed genes", x = "Pseudotime", colour = "", fill = "") + 
+  rm_axis
+
+ 
+ traj_celltypes <- Pseudotime_data[Pseudotime_data$treatment == "ST",] %>% 
+  ggplot(aes(x = Pseudotime, y = `Cell type`, fill = `Cell type`)) + 
+  geom_boxplot(outlier.alpha = 0.1) + 
+  theme_classic() + theme(legend.position = 'none') +
+  scale_fill_manual(values= cbPalette) + 
+  labs(y = "") + 
+  scale_y_discrete(limits=rev) + theme(axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+                                       axis.ticks = element_line(color = "black"))
 
 
-
-############## FIGURE 3 --------------------------
 DC_plot_SR <-  XA %>% 
   filter(Chr == "X") %>% 
   filter(logcpm >= 1) %>% 
@@ -301,82 +267,415 @@ DC_plot_SR <-  XA %>%
   mutate(treatment = factor(treatment, levels = c("ST", "SR"))) %>% 
   mutate(Chromosome = Chr) %>% 
   ggplot(aes(x = celltype, y = (XA), fill = treatment)) + geom_boxplot(outlier.alpha = 0.2) + 
-  labs(x = "", y = "log(CPM)", fill = "Chromosome") + 
+  labs(x = "", y = "log(CPM)", fill = "") + 
   stat_compare_means( aes(label = ..p.signif..), 
-  label.x = 1.5, label.y = 9, method = 'wilcox.test', method.args = list(alternative = 'two.sided'),
-  symnum.args = list(
-    cutpoints = c(0, 0.00001, 0.001, 0.05, 1), 
-    symbols = c("***", "**", "*", " "))) + 
-  
+                      label.x = 1.5, label.y = 7, method = 'wilcox.test', method.args = list(alternative = 'two.sided'),
+                      symnum.args = list(
+                        cutpoints = c(0, 0.00001, 0.001, 0.05, 1), 
+                        symbols = c("***", "**", "*", " ")), size = 7) + 
   geom_hline(yintercept = c(0,-1), linetype = 'dashed', colour = 'black') + 
-  
   theme_classic() + scale_fill_brewer(palette = 'Set2') + 
   scale_y_continuous(breaks=c(0.0, 5.0, 10.0, 15.0, 20.0)) + 
-  theme(legend.position="right") + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) +
-  ylab(expression(log[2]~X:A~ratio))
+  theme(legend.position="top", 
+        axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black")) +
+  ylab(expression(log[2]~X:A~expression~ratio)) + 
+  scale_y_continuous(breaks=c(-5,0,5)) 
+
+
+dif_exp_figure <- dif_exp_data %>%
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
+                                                "Late cyst", "GSC/Spermatogonia", 
+                                                "Primary spermatocytes", "Secondary spermatocytes", 
+                                                "Spermatids"))) %>% 
+  mutate(chr = ifelse(chr == "Chr_X", "X", "Autosomes")) %>%
+  mutate(Significant = ifelse(Significant != 'Unbiased', "Biased", "Unbiased")) %>% 
+  dplyr::count(celltype, Significant, chr) %>%
+  group_by(celltype) %>%
+  mutate(Proportion = 100 *(n / sum(n))) %>%
+  ungroup() %>% 
+  filter(Significant != 'Unbiased') %>% 
+  ggplot(aes(x = celltype, y = Proportion, fill = chr)) + 
+  geom_bar(position = 'dodge', stat = 'identity') + 
+  scale_fill_grey(start = 0.3) + 
+  theme_classic() + labs(x = "", y = "% of genes differentially expressed", fill = "Chromosome") + 
+  theme(axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+       axis.ticks = element_line(color = "black"), 
+       legend.position = 'top')
+########### ALL PLOTS READ ###################
+
+
+
+
+
+############## MAKING FIGURES ################
+
+
+#Figure 1 
+A <- ggplotGrob(UMAP_final)
+B <- ggplotGrob(dps_all_figure)
+Fig1 <- plot_grid(A,B, labels = c("(a)", "(b)"), align = 'v', axis = 'l', ncol = 1, rel_heights = c(8.5,6))
+ggsave("plots/FIG1.pdf", Fig1, width =8, height = 10)
+system("open plots/FIG1.pdf")
+
+
+
+#Figure 2
+A <- (traj_nfeatures)
+B <- (traj_celltypes)
+C <- (traj_umap)
+AB <- plot_grid(A, B, align = 'v', axis = 'l', nrow = 2, labels = c("(a)", "(b)"), rel_heights = c(3,2))
+Fig2 <- plot_grid(AB, C,  ncol = 2, labels = c("", "(c)"), rel_widths = c(2,2))
+ggsave("plots/FIG2.pdf", Fig2, width = 7, height = 3.5)
+#system("open plots/FIG2.pdf")
+
+
+#Figure 3
+A <- ggplotGrob(traj_XoverAll)
+B <- ggplotGrob(traj_celltypes)
+C <- ggplotGrob(DC_plot)
+BC <- align_plots(B, C, align = 'h', axis = 'b')
+AB <- plot_grid(A,BC[[1]], align = 'v', axis = 'l', nrow = 2, labels = c("(a)", "(b)"), rel_heights = c(3,3))
+Fig3 <- plot_grid(AB, BC[[2]], ncol = 2, labels = c("", "(c)"), rel_widths = c(2,2))
+ggsave("plots/FIG3.pdf", Fig3, width = 7, height = 4.5)
+system("open plots/FIG3.pdf")
+
+
+#Figure 4
+A1 <- ggplotGrob(traj_XoverAll_SR)
+A2 <- ggplotGrob(traj_celltypes)
+B <- ggplotGrob(DC_plot_SR)
+C <- ggplotGrob(dif_exp_figure)
+
+A2BC <- align_plots(A2, B,C, align = "h", axis = "b")
+A1BC <- align_plots(A1, A2BC[[2]], A2BC[[3]], align = "h", axis = "t")
+A <- plot_grid(A1BC[[1]], A2BC[[1]], ncol = 1, rel_heights = c(4,4), align = 'v', axis = 'l', labels = c("", "(b)"))
+Fig4 <- plot_grid(A, A2BC[[2]], A2BC[[3]], ncol = 3, labels = c("(a)", "(c)", "(d)"))
+ggsave("plots/FIG4.pdf", Fig4, width = 10, height = 4.5)
+system("open plots/FIG4.pdf")
+
+
+
+
+
+
+
+##################  FIGURE S1 #######################
+
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "yellow3", "#0072B2", "#D55E00", "#CC79A7")
+
+S1a <- DimPlot(seurat_final, group.by = 'Phase') + 
+  labs(title = "") + 
+  labs(x = "UMAP 1", y = "UMAP 2") + 
+  theme(axis.text.x = element_text(color="black"), 
+        axis.ticks = element_line(color = "black"), 
+        legend.position = c(0.8, 0.8))
+
+S1b <- seurat_final@meta.data %>% 
+  ggplot(aes(x = celltype, y = nFeature_RNA, fill = celltype)) +
+  geom_boxplot(outlier.alpha = 0.2) + 
+  theme_classic() + 
+  scale_fill_manual(values= cbPalette) + 
+  labs(x = "", y = "N\u00b0 expressed genes") + 
+  theme(legend.position="none", 
+        axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black"))
+
+
+S1c <- DotPlot(seurat_final, features = names(afms), assay = "RNA")+
+  scale_x_discrete(labels = as.vector((afms))) + coord_flip() +
+  labs(y = '', x = "Marker genes expression") + 
+  theme_classic() + 
+  scale_colour_gradientn(colours = colorspace::diverge_hcl(8)) + 
+  theme(legend.position="right", 
+        legend.box = "horizontol", 
+        axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black"))
+
+SA <- ggplotGrob(S1a)
+SB <- ggplotGrob(S1b)
+SC <- ggplotGrob(S1c)
+
+##
+AB <- plot_grid(SA, SB, align = 'v', axis = 'l', nrow = 2, labels = c("(a)", "(b)"), rel_heights = c(3,3))
+FigS1 <- plot_grid(AB, SC, ncol = 2, labels = c("", "(c)"), rel_widths = c(2,3))
+ggsave("plots/S1.pdf", FigS1, height = 7, width =10)
+system("open plots/S1.pdf")
+
+#####################################################
+
+##################  FIGURE S2 #######################
+
+#PLOIDY PLOT IN SCRIPT Ploidy_check.R
+
+#####################################################
+
+
+##################  FIGURE S3 #######################
+XCI_plot <- seurat_final@meta.data %>% 
+  mutate(treatment = factor(treatment, levels = c("ST", "SR"))) %>% 
+  filter(treatment == "ST") %>% 
+  ggplot(aes(x = celltype, y = Xprop, fill = treatment)) + geom_violin() +
+  theme_classic() + scale_fill_brewer(palette = 'Set2') + 
+  theme(legend.position="none", legend.box = "vertical", 
+        axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black")) +
+  labs(y = "N\u00b0 expressed X genes / \n N\u00b0 total expressed genes", x = "")
+
+S3 <- ggplotGrob(XCI_plot)
+ggsave("plots/FIGS3_XCI.pdf", S3, height = 4, width = 5)
+system("open plots/FIGS3_XCI.pdf")
+
+#####################################################
+
+
+##################  FIGURE S4 #######################
+
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "yellow3", "#0072B2", "#D55E00", "#CC79A7")
+
+S4_data <- ortholog_table %>%
+  group_by(REF_GENE_NAME) %>%
+  summarise(start = min(start), end = max(end), REF_GENE_NAME = REF_GENE_NAME[1], 
+            consensus_gene = consensus_gene[1], chromosome = chr[1]) %>%
+  merge(XA, by.x = "REF_GENE_NAME", by.y = "genes") %>% 
+  mutate(chromosome = gsub("Chr_", "Chromosome ", chromosome)) %>%
+  mutate(celltype = gsub(" sp", "\n sp", celltype)) %>% 
+  mutate(celltype = gsub("/", "/\n", celltype)) %>% 
+  filter(treatment == 'ST') %>% 
+   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
+                                                 "Late cyst", "GSC/\nSpermatogonia", 
+                                                 "Primary\n spermatocytes", "Secondary\n spermatocytes", 
+                                                "Spermatids")))
+
+S4a_lines <- S4_data %>% 
+  group_by(celltype, chromosome) %>% 
+  summarise(cpm = log2(median(2^logcpm))) 
+
+a <- S4_data %>%
+  ggplot(aes(x = celltype, y = logcpm, fill = chromosome)) + 
+  geom_boxplot() + 
+  scale_fill_brewer(palette = 'Dark2') +
+ # scale_fill_grey(start = 0.4) +
+  theme_classic() +
+  theme(legend.position = 'top', axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black")) + 
+  labs(fill = "", x = "", y = log[2]~"(CPM)")
+
+
+b <- S4_data %>% 
+  ggplot(aes(x = start/1000000, y = logcpm, colour = chromosome)) + geom_point(alpha = 0.1) + 
+  theme_classic() +
+  facet_grid(celltype ~ chromosome, switch = "both", scales = 'free_x') +
+  theme(strip.placement = "outside") + 
+  ylab(log[2]~"(CPM)") + xlab("Chromosomal position (Mb)") + 
+  theme(strip.background = element_blank(), 
+        legend.position = 'none') + 
+  geom_hline(data = S4a_lines, aes(yintercept = cpm), colour = 'black') + 
+  scale_color_brewer(palette = 'Dark2')
   
-
-ggsave("plots/FIG3_SRvsST_DC.pdf", DC_plot_SR, height = 5, width = 5)
-ggsave("plots/FIG3_SRvsST_DC.png", DC_plot_SR, height = 5, width = 5)
-
-system("open plots/FIG3_SRvsST_DC.pdf")
-
-#########################################
+S4a <- ggplotGrob(a)
+S4b <- ggplotGrob(b)
+S4 <- plot_grid(S4a, S4b, ncol = 1, labels = c("(a)", "(b)"), rel_heights = c(2,5), align = 'v', axis = 'l')
 
 
-############## FIGURE 4 --------------------------
+ggsave("plots/FIGS4_chr_exp.pdf", S4, height = 10, width = 6)
+system("open plots/FIGS4_chr_exp.pdf")
 
-load("data/RData/tau_data.RData")
 
-tau_plot_data <- tau_data %>% 
-  mutate(tau_type = paste0(tau_type, " specific genes")) %>% 
-  mutate(tau_type = factor(tau_type, levels = c("Muscle specific genes", "Cyst specific genes", 
-                                                "Pre-meiosis specific genes", "Post-meiosis specific genes"))) %>% 
-  mutate(chr = gsub("Chr_", "Chromosome  ", chr))
+#####################################################
 
-p1 <- tau_plot_data %>% filter(tau_type == "Pre-meiosis specific genes") %>%
-  ggplot(aes(x = celltype, y = tau_exp, fill = treatment)) + geom_boxplot(outlier.alpha = 0.1) +
-  labs(y = "% transcripts from \npre-meiosis-specific genes", x = "") + 
-  scale_fill_brewer(palette = 'Set2') +
-  facet_wrap(~chr, nrow = 1) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+
+
+##################  FIGURE S5 #######################
+
+
+MSLs <- c("PB.1152", "PB.9420")
+S5 <- DotPlot(seurat_final, features = MSLs,  assay = "RNA") + 
+  labs(y = '', x = '') + 
+  scale_x_discrete(labels = as.vector(c("msl-1", "msl-3", "mof", "Clamp", "mle"))) + 
   theme_classic() + 
+  scale_colour_gradientn(colours = colorspace::diverge_hcl(8)) + 
+  theme(legend.position="right", 
+        legend.box = "horizontol", 
+        axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black")) + 
+  coord_flip() + 
+  guides(color = guide_colorbar(title = 'Scaled expression'), 
+         size = guide_legend(title = '% of cells expressed'))
+
+ggsave("plots/S5_MSL_expression.pdf", S5, width = 6, height = 4)
+system("open plots/S5_MSL_expression.pdf")
+
+#####################################################
+
+
+
+
+##################  FIGURE S6 #######################
+
+XCI_plot <- seurat_final@meta.data %>% 
+  mutate(treatment = factor(treatment, levels = c("ST", "SR"))) %>% 
+  #filter(treatment == "ST") %>% 
+  ggplot(aes(x = celltype, y = Xprop, fill = treatment)) + geom_boxplot(outlier.alpha = 0.1) +
+  theme_classic() + scale_fill_brewer(palette = 'Set2') + 
+  theme(legend.position="right", legend.box = "vertical", 
+        axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black")) +
+  # ylim(0,0.4) +
+  #guides(fill = 'none') +
+  labs(y = "N\u00b0 expressed X genes / \n N\u00b0 total expressed genes", x = "") + 
   stat_compare_means( aes(label = ..p.signif..), 
-                      label.x = 1.5, label.y = 0.58, method = 'wilcox.test', method.args = list(alternative = 'two.sided'),
+                      label.x = 1.5, label.y = 0.25, method = 'wilcox.test', method.args = list(alternative = 'two.sided'),
                       symnum.args = list(
                         cutpoints = c(0, 0.00001, 0.001, 0.05, 1), 
-                        symbols = c("***", "**", "*", " "))) +
-  theme(legend.title=element_blank()) +
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
-  ylim(0,0.6) + rm_axis + 
-  theme(strip.text.x = element_text(color = "white"),
-        strip.background.x = element_rect(fill = "#4B4B4B", linetype = "solid"), 
-        legend.position = c(0.92, 0.78))
+                        symbols = c("***", "**", "*", " ")), size = 4)
 
-p2 <- tau_plot_data %>% filter(tau_type == "Post-meiosis specific genes") %>%
-  ggplot(aes(x = celltype, y = tau_exp, fill = treatment)) + geom_boxplot(outlier.alpha = 0.1) +
-  labs(y = "% transcripts from \npost-meiosis-specific genes", x = "") + 
-  scale_fill_brewer(palette = 'Set2') +
-  facet_wrap(~chr, nrow = 1) + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+S6 <- ggplotGrob(XCI_plot)
+ggsave("plots/FIGS6_XCI.pdf", S6, height = 4, width = 5)
+system("open plots/FIGS6_XCI.pdf")
+
+
+#####################################################
+
+
+
+##################  FIGURE S7 #######################
+
+myTheme <- theme(legend.text = element_text(size = 10), 
+                 legend.title = element_text(size = 12),
+                 legend.key.size = unit(1, 'line'))
+
+dif_exp_data <- dif_exp_data %>% 
+  mutate(Chromosome = chr) %>% 
+  mutate(`Expression bias` = Significant) %>% 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
+                                                "Late cyst", "GSC/Spermatogonia", 
+                                                "Primary spermatocytes", "Secondary spermatocytes", 
+                                                "Spermatids")))
+
+dif_exp_data$celltype <- as.vector(dif_exp_data$celltype)
+
+dif_exp_data$Chromosome[dif_exp_data$Chromosome == "Chr_X"] <- "X"
+dif_exp_data$Chromosome[dif_exp_data$Chromosome == "Chr_1"] <- "Autosomes"
+dif_exp_data$Chromosome[dif_exp_data$Chromosome == "Chr_2"] <- "Autosomes"
+labels <- dif_exp_data %>% 
+  filter(abs(logFC) > 2 & FDR < 0.05 & consensus_gene != genes) %>% 
+  filter(!grepl("CG", consensus_gene)) %>%
+  group_by(celltype) %>% 
+  top_n(FDR, n = -12)
+
+strip <- ggh4x::strip_themed(background_x = ggh4x::elem_list_rect(fill = cbPalette, 
+                                                                  alpha = 0.5))
+DIF_EXP_FIGa <- dif_exp_data %>% as.tibble() %>% 
+  filter(Chromosome == "X") %>% 
+  mutate(`Expression bias` = factor(`Expression bias`, levels = c("ST-biased", "SR-biased",  
+                                                                  "Unbiased"))) %>% 
+  ggplot(aes(x = logFC, y = -log10(FDR), 
+             colour = `Expression bias`)) +
+  geom_point() +
+  scale_colour_brewer(palette = 'Set2') +
+  geom_hline(yintercept = -log10(0.05), linetype = 2) + 
+  geom_vline(xintercept = c(-1, 1), linetype = 2) + 
+  theme_classic() +
+  ggh4x::facet_wrap2(~ celltype, strip = strip, nrow = 2) + 
+  theme(#strip.text.x = element_text(color = "white"),
+    #strip.background.x = element_rect(fill = "#4B4B4B", linetype = "solid"), 
+    legend.position = c(0.88, 0.23)) + 
+  
+  geom_label_repel(data = labels[labels$Chromosome == 'X',], aes(x = logFC, y = -log10(FDR), label = consensus_gene),
+                   box.padding   = 0.9, 
+                   point.padding = 0.1, force = 120,
+                   segment.color = 'grey50',show.legend = F, size = 2.8) +
+  xlim(-7.5, 7.5) + 
+  ylim(0,10) + myTheme + 
+  guides(shape = 'none', 
+         colour = guide_legend(override.aes = list(size = 2))) + 
+  labs(x = expression(log[2]~fold~change), 
+       y= expression(-log[10]~(FDR)))
+
+DIF_EXP_FIGb <- dif_exp_data %>% as.tibble() %>% 
+  filter(Chromosome != "X") %>% 
+  mutate(`Expression bias` = factor(`Expression bias`, levels = c("ST-biased", "SR-biased",  
+                                                                  "Unbiased"))) %>% 
+  ggplot(aes(x = logFC, y = -log10(FDR), 
+             colour = `Expression bias`)) +
+  geom_point() +
+  scale_colour_brewer(palette = 'Set2') +
+  geom_hline(yintercept = -log10(0.05), linetype = 2) + 
+  geom_vline(xintercept = c(-1, 1), linetype = 2) + 
+  theme_classic() +
+  ggh4x::facet_wrap2(~ celltype, strip = strip, nrow = 2) + 
+  theme(#strip.text.x = element_text(color = "white"),
+    #strip.background.x = element_rect(fill = "#4B4B4B", linetype = "solid"), 
+    legend.position = c(0.88, 0.23)) + 
+  
+  geom_label_repel(data = labels[labels$Chromosome != "X",], aes(x = logFC, y = -log10(FDR), label = consensus_gene),
+                   box.padding   = 0.9, 
+                   point.padding = 0.1, force = 100,
+                   segment.color = 'grey50',show.legend = F, size = 2.8) +
+  xlim(-7.5, 7.5) + 
+  ylim(0,10) + myTheme + 
+  guides(colour = 'none') + 
+  labs(x = expression(log[2]~fold~change), 
+       y= expression(-log[10]~(FDR)))
+
+
+
+S7 <- ggarrange(DIF_EXP_FIGa, DIF_EXP_FIGb, ncol = 1, nrow = 2, labels = c("(a)", "(b)"))
+ggsave("plots/FIGS7_dif_exp.pdf", S7, height = 11, width = 10)
+system("open plots/FIGS7_dif_exp.pdf")
+
+#####################################################
+
+
+
+##################  FIGURE S8 #######################
+
+
+S8_dif_exp_data <- dif_exp_data %>% 
+  mutate(Significant = factor(Significant, levels = c("ST-biased", "SR-biased", "Unbiased"))) %>% 
+  mutate(alpha = ifelse(Significant != "Unbiased", 1, 0.001)) %>% 
+  mutate(chr = gsub("Chr_", "Chromosome ", chr)) %>%
+  mutate(celltype = gsub(" sp", "\n sp", celltype)) %>% 
+  mutate(celltype = gsub("/", "/\n", celltype)) %>% 
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
+                                                "Late cyst", "GSC/\nSpermatogonia", 
+                                                "Primary\n spermatocytes", "Secondary\n spermatocytes", 
+                                                "Spermatids"))) %>% 
+  ggplot(aes(x = start/1000000, y = logFC, alpha = alpha,  colour = Significant)) + geom_point() +
   theme_classic() + 
-  theme(legend.title=element_blank()) + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
-  ylim(0,0.6) + 
-  stat_compare_means( aes(label = ..p.signif..), 
-                      label.x = 1.5, label.y = 0.58, method = 'wilcox.test', method.args = list(alternative = 'two.sided'),
-                      symnum.args = list(
-                        cutpoints = c(0, 0.00001, 0.001, 0.05, 1), 
-                        symbols = c("***", "**", "*", " "))) + 
-  theme(strip.text.x = element_blank(),
-        strip.background.x = element_rect(fill = "#4B4B4B", linetype = "solid"), 
-        legend.position = 'none')
-                                          
-
-Fig4 <- ggarrange(plotlist = list(p1,p2), nrow = 2, common.legend = FALSE, heights = c(1,1.3), labels = c("(a)", "(b)"))
-ggsave("plots/FIG4_tau_exp.pdf", Fig4, height = 8, width = 8)
-system("open plots/FIG4_tau_exp.pdf")
+  facet_grid(celltype ~ chr, switch = "both", scales = 'free_x') +
+  theme(strip.placement = "outside") +
+  ylab(expression(log[2]~fold~change)) + xlab("Chromosomal position (Mb)") + 
+  scale_color_brewer(palette = 'Set2') + 
+  theme(strip.background = element_blank()) + 
+  guides(alpha = 'none') + labs(colour = "Expression bias")
 
 
+ggsave("plots/FIGS8_chr_dif_exp.pdf", S8_dif_exp_data, height = 10, width = 8)
+system("open plots/FIGS8_chr_dif_exp.pdf")
+
+#####################################################
+
+
+
+##################  FIGURE S9 #######################
+
+
+#####################################################
+
+
+
+## TABLES 
+
+dif_exp_data %>% 
+  filter(Significant != "Unbiased") %>%
+  mutate(consensus_gene = ifelse(consensus_gene == genes, " ", consensus_gene)) %>%
+  dplyr::select(genes, chr, logFC, FDR, celltype, Significant, consensus_gene) %>% 
+  rename("Gene" = genes, "Log2 Fold Change" = logFC, "FDR" = FDR, 
+         "Cell type" = celltype, "Bias" = Significant, 
+         "Drosophila ortholog" = consensus_gene) %>%
+  write.table("data/MANUSCRIPT/S8_DEG_full_table.tsv", sep = "\t", quote = F, row.names = F)
 
 
 

@@ -49,14 +49,6 @@ agg_cell_types <- aggregateAcrossCells(sce, id=colData(sce)[,c("celltype", "samp
 agg_cell_types <- agg_cell_types[,agg_cell_types$ncells >= 10]
 
 
-### WORKIGN IN PROGERESS ###
-### WORKIGN IN PROGERESS ###
-### WORKIGN IN PROGERESS ###
-### WORKIGN IN PROGERESS ###
-### WORKIGN IN PROGERESS ###
-### WORKIGN IN PROGERESS ###
-
-
 ## NEW PBDGE FUNCTION
 PBDGE <- function(label, sce, func = 'custom', seurat_obj = seurat_final, consistent_genes = T){
   if (consistent_genes == TRUE){
@@ -76,14 +68,15 @@ PBDGE <- function(label, sce, func = 'custom', seurat_obj = seurat_final, consis
   }
   dge_data <- sce[keep,sce$celltype == label]
   y <- DGEList(counts(dge_data), samples=colData(dge_data), group = dge_data$treatment)
+  y <- calcNormFactors(y)
   design <- model.matrix(~treatment, y$samples)
   y <- normLibSizes(y)
   y <- estimateDisp(y, design)
   cpm <- cpm(y, log = F)
   if (func == "custom"){
-    keep1 <- cpm[,y$samples$treatment== "ST"] >= 2
+    keep1 <- cpm[,y$samples$treatment== "ST"] >= 1
     keep1 <- rowSums(keep1) > (ncol(keep1)/2)
-    keep2 <- cpm[,y$samples$treatment== "SR"] >= 2
+    keep2 <- cpm[,y$samples$treatment== "SR"] >= 1
     keep2 <- rowSums(keep2) > (ncol(keep2)/2)
     keep <- keep1 | keep2
   } else if (func == "edger"){  
@@ -103,6 +96,7 @@ PBDGE <- function(label, sce, func = 'custom', seurat_obj = seurat_final, consis
   out$toptags <- topTags(res, n = nrow(res))
   out$exacttest <- topTags(STSR, n = nrow(STSR))
   out$func <- func
+  out$y <- y
   return(out)
 }
 
@@ -110,6 +104,9 @@ PBDGE <- function(label, sce, func = 'custom', seurat_obj = seurat_final, consis
 
 de.results_act_edger <- sapply(unique(agg_cell_types$celltype), PBDGE, sce = agg_cell_types, func = 'custom',
                                USE.NAMES = T, simplify = F)
+
+de.results_act_edger$`Primary spermatocytes`$toptags$table %>% as.data.frame() %>% mutate(gene = rownames(.)) %>% View()
+de.results_act_edger$`Primary spermatocytes`$y$counts %>% as.data.frame() %>% mutate(gene = rownames(.)) %>% View()
 
 
 cols <- c("treatment", "celltype", "sample")
@@ -205,7 +202,7 @@ model2 <- dif_exp_data %>%
                                                 "Spermatids"))) %>%
   glm(Significant ~1 +celltype, family = binomial, data = .)
 
-model3 <- dif_exp_data %>% 
+model3 <- dif_exp_data%>% 
   mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
   #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
@@ -216,7 +213,7 @@ model3 <- dif_exp_data %>%
 
 
 model4 <- dif_exp_data %>% 
-  mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
+ mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
   #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
                                                 "Late cyst", "GSC/Spermatogonia", 
@@ -230,8 +227,42 @@ anova(model2, model3, test = "Chisq")
 anova(model3, model4, test = "Chisq")
 
 #Model 3 is best fit 
-summary(model3)$coefficients %>% 
+summary(model4)$coefficients %>% 
   write.table("data/DEG_model3_coefficients.tsv", sep = "\t", quote = F, row.names = T)
+
+tmp <- dif_exp_data %>% 
+  #filter(Significant != "Unbiased") %>%
+  mutate(consensus_gene = ifelse(consensus_gene == genes, " ", consensus_gene)) %>%
+  dplyr::select(genes, chr, logFC, FDR, celltype, Significant, consensus_gene) %>% 
+  rename("Gene" = genes, "Log2(FC)" = logFC, "FDR" = FDR, 
+         "Cell type" = celltype, "Bias" = Significant, 
+         "Drosophila ortholog" = consensus_gene) %>% 
+  .[,c(1,7,2,5,3,4,6)]
+
+unique(dif_exp_data$celltype)
+
+
+celltypes <- c("M", "EC", "LC", "GSC", "PS", "SS", "S")
+names(celltypes) <- c("Muscle", "Early cyst", "Late cyst", "GSC/Spermatogonia", 
+                                   "Primary spermatocytes", "Secondary spermatocytes", "Spermatids")
+
+make_df_func <- function(tmp, celltype){
+  tmp2 <- tmp %>% 
+    filter(`Cell type` == celltype) %>% 
+    .[,c(1,2,3,5,6,7)]
+  colnames(tmp2)[c(4,5,6)] <- paste(celltypes[celltype], colnames(tmp2)[c(4,5,6)], sep = " ")
+  tmp2[,c(4,5)] <- round(tmp2[,c(4,5)], 3)
+  return(tmp2)
+}
+
+sig_dif_exp1 <- lapply(names(celltypes), make_df_func, tmp = tmp) %>% 
+  reduce(full_join, by = c("Gene", "chr", "Drosophila ortholog"))
+sig_dif_exp1[is.na(sig_dif_exp1)] <- "Low Exp"
+keep <- which(rowSums(sig_dif_exp1 == "SR-biased" | sig_dif_exp1 == "ST-biased") > 0)
+sig_dif_exp1 <- sig_dif_exp1[keep,]
+
+
+write.table(sig_dif_exp1, "data/DEG_full_table.tsv", sep = "\t", quote = F, row.names = F)
 
 
 dif_exp_data_table %>% 
@@ -296,65 +327,3 @@ model_inv <- DGE_inversion %>%
 summary(model_inv)$coefficients %>% 
   write.table("data/DEG_model_inv_coefficients.tsv", sep = "\t", quote = F, row.names = T)
 #There are no interesting results for enrichment of DGE inside/outside the inversion 
-
-### Candidate Genes ###
-Volcano_Plot <- function(ct){
-  myTheme <- theme(legend.text = element_text(size = 12), 
-                   legend.title = element_text(size = 14),
-                   legend.key.size = unit(2, 'line'))
-  
-  data <- de.results_act_edger[[ct]]$res$table %>% 
-    mutate(FDR = p.adjust(PValue, method = "BH")) %>% 
-    mutate(gene = rownames(.)) %>% 
-    merge(ortholog_table, by.x = "gene", by.y = "REF_GENE_NAME") %>% 
-    mutate(Chromosome = chr)
-  plot <- data %>% 
-    ggplot(aes(x = logFC, y = -log10(FDR), 
-               colour = (abs(logFC) > 1 & FDR < 0.05), shape = Chromosome)) +
-    geom_point() + scale_colour_hue(guide = F, l = 45) +
-    geom_hline(yintercept = -log10(0.05), linetype = 2) + 
-    geom_vline(xintercept = c(-1, 1), linetype = 2) + 
-    theme_classic() +
-    #theme(legend.position = "none") + 
-    labs(title = paste0(ct, ': \n+ve = ST-biased,  -ve = SR-biased')) + 
-    geom_text_repel(data = data %>% filter(abs(logFC) > 1 & FDR < 0.05), 
-                     aes(label = consensus_gene), 
-                     box.padding = 0.5, point.padding = 0.5, segment.color = 'grey50') + 
-    xlim(-7.5, 7.5) + 
-    ylim(0,10) + myTheme + 
-    guides(shape = guide_legend(override.aes = list(size = 5)))
-  return(plot)
-}
-
-
-Volcano_Plot <- function(ct){
-  myTheme <- theme(legend.text = element_text(size = 12), 
-                   legend.title = element_text(size = 14),
-                   legend.key.size = unit(2, 'line'))
-  
-  data <- dif_exp_data %>% 
-    filter(celltype == ct) %>% 
-    mutate(Chromosome = chr)
-  plot <- data %>% 
-    ggplot(aes(x = logFC, y = -log10(FDR), 
-               colour = Significant, shape = Chromosome)) +
-    geom_point() + scale_colour_hue(guide = F, l = 45) +
-    geom_hline(yintercept = -log10(0.05), linetype = 2) + 
-    geom_vline(xintercept = c(-1, 1), linetype = 2) + 
-    theme_classic() +
-    #theme(legend.position = "none") + 
-    labs(title = paste0(ct, ': \n+ve = ST-biased,  -ve = SR-biased')) + 
-    geom_text_repel(data = data %>% filter(abs(logFC) > 1 & FDR < 0.05), 
-                    aes(label = consensus_gene), 
-                    box.padding = 0.5, point.padding = 0.5, segment.color = 'grey50') + 
-    xlim(-7.5, 7.5) + 
-    ylim(0,10) + myTheme + 
-    guides(shape = guide_legend(override.aes = list(size = 5)))
-  return(plot)
-}
-
-
-volc_plots <- lapply(names(de.results_act_edger), Volcano_Plot)
-ggarrange(plotlist = volc_plots[c(2,4,3,1,5,6,7)], 
-          common.legend = T, 
-          legend = "bottom")

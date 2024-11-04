@@ -11,3 +11,8 @@ Encoding: UTF-8
 
 RnwWeave: Sweave
 LaTeX: pdfLaTeX
+
+BuildType: Package
+PackageUseDevtools: Yes
+PackagePath: /Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/scStalkie_Drive/R_analyses/packages/presto-master
+PackageInstallArgs: --no-multiarch --with-keep.source

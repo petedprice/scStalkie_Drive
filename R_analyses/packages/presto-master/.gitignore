@@ -1,0 +1,8 @@
+inst/doc
+.Rproj.user
+.Rhistory
+.RData
+src/*.so
+src/*.o
+.ipynb_checkpoints
+**/.ipynb_checkpoints

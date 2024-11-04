@@ -3,15 +3,16 @@ library(Matrix)
 library(Seurat)
 library(ggpubr)
 library(gridExtra)
+library(cowplot)
 rm(list = ls())
 load("data/RData/seurat_final.RData")
 samples <- c("sr1", "sr2", "sr3", "sr5", "st1","st2","st3","st5")
 
-run_checks = "yes"
+run_checks = "no"
 if (run_checks == "yes"){
   
   metadata <- seurat_final@meta.data
-  thresholds <- data.frame(het = c(0,0,1), hom = c(0,1,3), nsnps = rep(c(0,5,5), each = 1))
+  thresholds <- data.frame(het = c(0,0,0,1,1), hom = c(0,1,1,3,3), nsnps = rep(c(0,5,10,5,10), each = 1))
   metadatas <- list()
   het_data_sum_save <- list()
   het_data_save <- list()
@@ -106,59 +107,83 @@ new_meta_data$celltype <- factor(new_meta_data$celltype, levels =
                                      "Primary spermatocytes", "Secondary spermatocytes", "Spermatids"))
 ###########################
 
-p1 <- new_meta_data %>% 
+p1 <- 
+  new_meta_data %>% 
+  filter(treatment == "ST") %>% 
   filter(snp_threshold ==0 & het_threshold ==1 & hom_threshold == 1) %>% 
   filter(Chr != "Chr_X") %>% 
   mutate(Ploidy = ploidy_class) %>% 
   filter(celltype %in% c("Early cyst", "Late cyst", "Muscle", "GSC/Spermatogonia", "Primary spermatocytes")) %>% 
-  ggplot(aes(x = snpcov, y = heterozygosity, colour = Ploidy)) +
+  ggplot(aes(x = snpcov, y = 100*heterozygosity, colour = Ploidy, fill = Ploidy)) +
   geom_point(alpha = 0.5) + 
-  scale_colour_brewer(palette = 'Dark2') +
-  geom_smooth(method = "lm", colour = 'red', aes(group = 1)) + 
-  stat_cor(method = 'spearman', aes(group = 1)) + 
-  labs(y = "Heterozygosity", x = "Mean per-cell SNP coverage") + 
+  scale_colour_brewer(palette = 'Set1') + #, guide = 'none') +
+  scale_fill_brewer(palette = 'Set1',guide = guide_legend(override.aes = list(linetype = c(0, 0),
+                                                                              shape = c(NA, NA),
+                                                                              color = c(NA, NA), 
+                                                                              alpha = c(1,1)))) +
+  #geom_smooth(method = "lm", colour = 'red', aes(group = 1)) + 
+  stat_cor(method = 'pearson', aes(group = 1), label.y = 87) + 
+  labs(y = "% of homozygous sites per cell", x = "Mean per-cell SNP coverage") + 
   theme_classic() +  
-  theme(legend.position = 'none')
-  
+  theme(legend.position = c(0.8,0.8))
+p1
 p2 <- new_meta_data %>% 
+  filter(treatment == "ST") %>% 
   filter(snp_threshold ==0 & het_threshold ==1 & hom_threshold == 1) %>% 
   mutate(Ploidy = ploidy_class) %>% 
   filter(Chr != "Chr_X") %>% 
   #filter(celltype %in% c("Early cyst", "Late cyst", "Muscle", "GSC/Spermatogonia", "Primary spermatocytes")) %>% 
   ggplot(aes(x = celltype, fill = Ploidy)) + 
   geom_bar(position = 'dodge') + 
-  scale_fill_brewer(palette = 'Dark2') + 
+  scale_fill_brewer(palette = 'Set1') + 
   theme_classic() + 
   labs(y = "Number of cells", x = "") + 
   theme(legend.position = 'none', 
         axis.text.x=element_blank())
 
 p3 <- new_meta_data %>% 
-  filter(snp_threshold ==5 & het_threshold == 1& hom_threshold == 2) %>% 
+  filter(treatment == "ST") %>% 
+  filter(ploidy_class != "Missing") %>%
+  filter(snp_threshold ==10 & het_threshold == 2& hom_threshold == 4) %>% 
   filter(Chr != "Chr_X") %>% 
   mutate(Ploidy = ploidy_class) %>% 
   filter(celltype %in% c("Early cyst", "Late cyst", "Muscle", "GSC/Spermatogonia", "Primary spermatocytes")) %>% 
-  ggplot(aes(x = snpcov, y = heterozygosity, colour = Ploidy)) +
+  ggplot(aes(x = snpcov, y = 100*heterozygosity, colour = Ploidy)) +
   geom_point(alpha = 0.2) + 
-  scale_colour_brewer(palette = 'Dark2') +
-  geom_smooth(method = "lm", colour = 'red', aes(group = 1)) + 
-  stat_cor(method = 'spearman', aes(group = 1)) + 
-  labs(y = "Heterozygosity", x = "Mean per-cell SNP coverage") + 
+  scale_colour_brewer(palette = 'Set1') +
+  #geom_smooth(method = "loess", colour = 'red', aes(group = 1)) + 
+  stat_cor(method = 'pearson', aes(group = 1), label.y = 5) + 
+  labs(y = "% of homozygous sites  per cell", x = "Mean per-cell SNP coverage") + 
   theme_classic() + 
   theme(legend.position = 'none')
+
 p4 <- new_meta_data %>% 
+  filter(treatment == "ST") %>% 
   filter(ploidy_class != "Missing") %>%
-  filter(snp_threshold ==5 & het_threshold == 1& hom_threshold == 2) %>% 
+  filter(snp_threshold ==10 & het_threshold == 2& hom_threshold == 4) %>% 
   mutate(Ploidy = ploidy_class) %>% 
   filter(Chr != "Chr_X") %>% 
   #filter(celltype %in% c("Early cyst", "Late cyst", "Muscle", "GSC/Spermatogonia", "Primary spermatocytes")) %>% 
   ggplot(aes(x = celltype, fill = Ploidy)) + 
   geom_bar(position = 'dodge') + 
-  scale_fill_brewer(palette = 'Dark2') + 
+  scale_fill_brewer(palette = 'Set1') + 
   theme_classic() + 
   labs(y = "Number of cells", x = "") + 
   guides(fill = guide_legend(title = "Predicted ploidy")) + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1))
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
+  theme(legend.position = 'none')
+
+new_meta_data %>% 
+  filter(treatment == "ST") %>% 
+  filter(ploidy_class != "Missing") %>%
+  filter(snp_threshold ==10 & het_threshold == 2& hom_threshold == 4) %>% 
+  mutate(Ploidy = ploidy_class) %>% 
+  filter(Chr != "Chr_X") %>%  dim()
+new_meta_data %>% 
+  filter(treatment == "ST") %>% 
+  filter(snp_threshold ==0 & het_threshold ==1 & hom_threshold == 1) %>% 
+  mutate(Ploidy = ploidy_class) %>% 
+  filter(Chr != "Chr_X") %>% dim()
 
 ab <- align_plots(p1,p2, align = 'h', axis = 'b')
 cd <- align_plots(p3,p4, align = 'h', axis = 'b')
@@ -166,9 +191,9 @@ bd <- plot_grid(ab[[2]],cd[[2]], labels = c("(b)", "(d)"), align = 'v',
                 axis = 'r', ncol = 1, label_x = -0.03, rel_heights = c(4,5))
 ac <- plot_grid(ab[[1]],cd[[1]], labels = c("(a)", "(c)"), align = 'v', 
                 axis = 'r', ncol = 1, label_x = -0.03, rel_heights = c(4,5))
-Ploidy_Sup <- plot_grid(ac, bd, rel_widths = c(3,4))
+Ploidy_Sup <- plot_grid(ac, bd, rel_widths = c(4,4))
 
-ggsave("plots/Ploidy_Sup.pdf", Ploidy_Sup, width = 8, height = 8)
+ggsave("plots/Ploidy_Sup.pdf", Ploidy_Sup, width = 8, height = 9)
 system("open plots/Ploidy_Sup.pdf")
 
 ############################
