@@ -2,7 +2,7 @@ process seurat_doublet {
 
     cpus { 8 * task.attempt }
     errorStrategy 'retry'
-    maxRetries 6
+    //maxRetries 6
     memory { 84.GB * task.attempt }
     
     label 'seurat'

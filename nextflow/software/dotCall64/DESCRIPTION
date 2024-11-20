@@ -1,0 +1,35 @@
+Package: dotCall64
+Type: Package
+Title: Enhanced Foreign Function Interface Supporting Long Vectors
+Version: 1.2
+Date: 2024-10-03
+Authors@R: c(person("Kaspar", "Moesinger", role = c("aut"),
+    email = "kaspar.moesinger@gmail.com"), 
+    person("Florian", "Gerber", role = c("aut"),
+    email = "flora.fauna.gerber@gmail.com",
+    comment = c(ORCID = "0000-0001-8545-5263")),
+    person("Reinhard", "Furrer", role = c("cre", "ctb"),
+    email = "reinhard.furrer@uzh.ch",
+    comment = c(ORCID = "0000-0002-6319-2332")))
+Description: Provides .C64(), which is an enhanced version of .C()
+    and .Fortran() from the foreign function interface. .C64() supports long
+    vectors, arguments of type 64-bit integer, and provides a mechanism to
+    avoid unnecessary copies of read-only and write-only arguments. This
+    makes it a convenient and fast interface to C/C++ and Fortran code.
+License: GPL (>= 2)
+URL: https://git.math.uzh.ch/reinhard.furrer/dotCall64
+BugReports: https://git.math.uzh.ch/reinhard.furrer/dotCall64/-/issues
+Depends: R (>= 4.0)
+Suggests: microbenchmark, RhpcBLASctl, RColorBrewer, roxygen2, spam,
+        testthat,
+Collate: 'vector_dc.R' 'dotCall64.R' 'zzz.R'
+RoxygenNote: 7.2.3
+NeedsCompilation: yes
+Packaged: 2024-10-03 11:57:25 UTC; furrer
+Author: Kaspar Moesinger [aut],
+  Florian Gerber [aut] (<https://orcid.org/0000-0001-8545-5263>),
+  Reinhard Furrer [cre, ctb] (<https://orcid.org/0000-0002-6319-2332>)
+Maintainer: Reinhard Furrer <reinhard.furrer@uzh.ch>
+Repository: CRAN
+Date/Publication: 2024-10-04 17:10:05 UTC
+Built: R 4.2.2; x86_64-pc-linux-gnu; 2024-11-15 13:30:20 UTC; unix
