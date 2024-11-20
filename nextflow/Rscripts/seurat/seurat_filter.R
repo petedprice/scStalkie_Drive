@@ -10,13 +10,13 @@ library(stringr)
 library(ggplot2)
 
 args = commandArgs(trailingOnly=TRUE)
-
+sessionInfo()
 ##### Data and custom scripts ----
 path_to_pd <- args[1]
 datapath = args[2]
 output_path = args[3]
 metadata_nf=read.csv(args[4], header = F)
-mt_genes=read.table(args[5])
+mt_genes=read.table(args[5], sep = ',')
 nfs=as.numeric(args[6])
 mtr=as.numeric(args[7])
 gu=as.numeric(args[8])
@@ -75,6 +75,8 @@ filtered_seurat <- subset(x = merged_seurat,
 #				(nGene < 7000))
 metadata_clean <- filtered_seurat@meta.data
 
+
+dim(filtered_seurat)
 outdatapath = paste(output_path, "/outdata", sep = "")
 dir.create(outdatapath, showWarnings = F, recursive = T)
 save(filtered_seurat, metadata_clean, file = paste(outdatapath, "/filtered_seurat.RData", sep = ""))

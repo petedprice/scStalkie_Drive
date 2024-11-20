@@ -12,7 +12,6 @@ process cellranger_mkref {
     """
     #!/bin/bash
 
-
     $params.cellranger mkgtf \
 	${params.gtf_dir}/${ref}.gtf \
 	cr_${ref}.gtf

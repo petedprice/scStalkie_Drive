@@ -7,11 +7,6 @@ library(cowplot)
 library(RCurl)
 library(stringr)
 library(ggplot2)
-install.packages(c("fields", "spam", "pryr", "memuse"), repos = 'http://cran.us.r-project.org', lib = '.')
-library(spam, lib.loc = '.')
-library(fields, lib.loc = '.')
-library(pryr, lib.loc = '.')
-library(memuse, lib.loc = '.')
 library(future)
 library(parallel)
 
@@ -27,25 +22,13 @@ doublet_finder = T
 memory=340
 path_to_pd=args[6]
 
-print(paste("memory available:", mem_used()))
-Sys.meminfo()
-detectCores()
 
 options(future.globals.maxSize = (memory*1000) * 1024^2)
-plan("multiprocess", workers = threads)
+
+#plan("multiprocess", workers = threads)
 
 if (doublet_finder == TRUE){
-   #remotes::install_github('chris-mcginnis-ucsf/DoubletFinder', upgrade = F, lib = '.')
-   #library(DoubletFinder,lib.loc  = '.')
-   source(paste(path_to_pd, "/Rscripts/doubletfinder/paramSweep.R", sep = ""))
-   source(paste(path_to_pd, "/Rscripts/doubletfinder/doubletFinder.R", sep = ""))
-   source(paste(path_to_pd, "/software/doubletfinder/find.pK.R", sep = ""))
-   source(paste(path_to_pd, "/software/doubletfinder/kurtosis.R", sep = ""))
-   source(paste(path_to_pd, "/software/doubletfinder/modelHomotypic.R", sep = ""))
-   source(paste(path_to_pd, "/software/doubletfinder/parallel_paramSweep.R", sep = ""))
-   source(paste(path_to_pd, "/software/doubletfinder/skewness.R", sep = ""))
-   source(paste(path_to_pd, "/software/doubletfinder/summarizeSweep.R", sep = ""))
-   source(paste(path_to_pd, "/software/doubletfinder/bimodality_coefficient.R", sep = ""))
+   library(DoubletFinder,lib.loc  = paste0(path_to_pd, '/software'))
 }
 
 
@@ -63,21 +46,18 @@ dir.create(plotpath, showWarnings = F, recursive = T)
 
 
 #Cell cycle scoring 
+filtered_seurat <- NormalizeData(filtered_seurat)
 filtered_seurat <- CellCycleScoring(filtered_seurat, 
                                     g2m.features = cellcycle$gene[cellcycle$phase == "G2/M"], 
                                     s.features = cellcycle$gene[cellcycle$phase == "S"])
 
-print(paste("memory available:", mem_used()))
 if (doublet_finder == TRUE){
   ##### DoubletFinder ----- 
   cat("You chose to remove doublets so removing them for you!\n \
       To keep doublets use command -z FALSE when running this script")
   nExp <- round(ncol(filtered_seurat)*0.025) 
   filtered_seurat <-SCTransform(filtered_seurat, vars.to.regress =
-                                c("mitoRatio","nUMI","S.Score","G2M.Score"))
-  #filtered_seurat <-SCTransform(filtered_seurat, vars.to.regress =
-  #                              c("nUMI","S.Score","G2M.Score"))
-
+			c("mitoRatio","nUMI"))
   print("SCT trnasformed")
   filtered_seurat <-RunPCA(filtered_seurat)
   filtered_seurat <-RunUMAP(filtered_seurat, dims = 1:40,reduction = "pca")
@@ -85,7 +65,7 @@ if (doublet_finder == TRUE){
   filtered_seurat <- FindClusters(filtered_seurat, verbose = F)
   print("clusters and neighbours found (1)")
   find_pk <- function(so){
-    sweep.list <- paramSweep_tmp(so, PCs = 1:40, sct = T, num.cores = threads)
+    sweep.list <- paramSweep(so, PCs = 1:40, sct = T, num.cores = threads)
     print("sl")
     sweep.stats <- summarizeSweep(sweep.list, GT = FALSE)
     print("ss")
@@ -102,7 +82,7 @@ if (doublet_finder == TRUE){
   optimal_pks <-find_pk(filtered_seurat)
   print(optimal_pks)
   print("optimal pk found")
-  filtered_seurat <-doubletFinder_tmp(filtered_seurat, pN=0.25, pK=optimal_pks, nExp=nExp, PCs=1:40, sct=TRUE)
+  filtered_seurat <-doubletFinder(filtered_seurat, pN=0.25, pK=optimal_pks, nExp=nExp, PCs=1:40, sct=TRUE)
 
   print("doubletfinder run")
 
@@ -120,9 +100,10 @@ if (doublet_finder == TRUE){
   ggsave(filename = paste(plotpath, filtered_seurat$sample[1], "_doublet_plots.pdf", sep = ""),plot = doublet_plots,  width = 10, height = 17)
  
   print("plots saved")
+  doublet_seurat_all <- filtered_seurat
   doublet_seurat <- subset(filtered_seurat, doublet_finder == "Singlet")
   print("seur obj subsetted")
 }
 
-save(doublet_seurat, file = paste(outdatapath, "/doublet_seurat.RData", sep = ""))
+save(doublet_seurat, doublet_seurat_all, file = paste(outdatapath, "/doublet_seurat.RData", sep = ""))
 
