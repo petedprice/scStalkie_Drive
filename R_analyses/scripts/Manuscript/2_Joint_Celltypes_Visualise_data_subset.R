@@ -11,7 +11,7 @@ rm(list = ls())
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 ortholog_table$REF_GENE_NAME <- gsub("_", "-", ortholog_table$REF_GENE_NAME)
 
-recluster=FALSE
+recluster=TRUE
 
 if (recluster == TRUE){
   load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_subset.RData")

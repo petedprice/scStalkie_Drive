@@ -10,10 +10,18 @@ ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] =
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
 
 MSLs1 <- c("PB.1152", "PB.9420")
-MSLs2 <- c("gene-2030", "PB.520", "STRG.10819")
+MSLs2 <- c("gene_2030", "PB.520", "STRG.10819")
 MSLs <- c(MSLs1, MSLs2)
-MSLs <- c(MSLs1)
+#MSLs <- c(MSLs1)
 
+ortholog_table %>% 
+  filter(REF_GENE_NAME %in% MSLs) %>% 
+  select(REF_GENE_NAME, OMA_DMEL, OF_DMEL, consensus_gene) %>% 
+  unique() %>% 
+  rename(Tdal_gene = REF_GENE_NAME, 
+         Orthofinder_ortholog = OF_DMEL, 
+         OMA_ortholog = OMA_DMEL) %>% 
+  write.csv("data/DCC.csv")
 
 MSL_exp <- XA %>% 
   filter(treatment == "ST") %>% 

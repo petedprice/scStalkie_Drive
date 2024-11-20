@@ -8,6 +8,8 @@ library(clustree)
 rm(list = ls())
 
 load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_no_cellcycle_markers.RData")
+#load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_newref.RData")
+
 seurat_integrated$treatment <- "SR"
 seurat_integrated$treatment[grep("st", seurat_integrated$sample)] <- "ST"
 DefaultAssay(seurat_integrated) <- "integrated"
@@ -50,8 +52,8 @@ CT_noclusters <- clusttree$data %>%
 
 
 clustering_plots <- ggarrange(EP, CT, CT_noclusters, ncol = 1, nrow = 3)
-ggsave("plots/clustering_plots.pdf", clustering_plots, height = 30, width = 30)
-ggsave("plots/clustering_plots.png", clustering_plots, height = 30, width = 30)
+#ggsave("plots/clustering_plots.pdf", clustering_plots, height = 30, width = 30)
+#ggsave("plots/clustering_plots.png", clustering_plots, height = 30, width = 30)
 
 res <- 'integrated_snn_res.0.75'
 Idents(seurat_integrated) <- res
@@ -181,14 +183,18 @@ keep <- SR_keep | ST_keep
 #################### FINAL ASSIGNMENT -------------------------
 seurat_integrated@meta.data$celltype <- "KEEP"
 #Removing clusters with high variance within treatment
-#seurat_integrated@meta.data$celltype[!seurat_integrated@meta.data$integrated_snn_res.0.75 %in% names(keep)[keep]] <- "Sparce"
+seurat_integrated@meta.data$celltype[!seurat_integrated@meta.data$integrated_snn_res.0.75 %in% names(keep)[keep]] <- "Sparce"
 
 #Removing potential doublets
 no_cell_cycle_marker_doublets_0.75 <- c()
 seurat_integrated@meta.data$celltype[seurat_integrated@meta.data$integrated_snn_res.0.75 %in% c()] <- "Doublet"
 
 #Limited marker expression, unknown celltypes
+#For old reference 
 no_cell_cycle_marker_unknown_cells_0.75 <- c(0,9,13,4)
+#For new reference 
+#no_cell_cycle_marker_unknown_cells_0.75 <- c(0,1, 15, 20,25) #15? 20?
+
 
 seurat_integrated@meta.data$celltype[seurat_integrated@meta.data$integrated_snn_res.0.75 %in%
                                        no_cell_cycle_marker_unknown_cells_0.75] <- "Low marker expression"
