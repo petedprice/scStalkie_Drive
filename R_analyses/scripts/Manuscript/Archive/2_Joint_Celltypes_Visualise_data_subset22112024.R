@@ -14,7 +14,7 @@ ortholog_table$REF_GENE_NAME <- gsub("_", "-", ortholog_table$REF_GENE_NAME)
 recluster=TRUE
 
 if (recluster == TRUE){
-  load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_subset.RData")
+  load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_subset_old_ref.RData")
   
   ######################## RE Run but REMOVE CLUSTERS -----------
   
@@ -59,7 +59,7 @@ if (recluster == TRUE){
   
   res <- 'integrated_snn_res.0.4'
   Idents(seurat_integrated_ss) <- res
-  
+  DimPlot(seurat_integrated_ss)
   
   save(seurat_integrated_ss, file = 'data/RData/integrated_seurat_nf200_mtr0.20_gu0_reclus_subset.RData')
  } else {
@@ -89,7 +89,7 @@ for (c in clusters){
   #genes<- markers$T.dal_marker[grepl(tolower(c), tolower(markers$Consensus_Marker))]
   genes2 <- genes %>% gsub(",", " ", .) %>% 
     str_split(" ") %>% unlist() %>% gsub("\\(|\\)", "", .) %>% 
-    gsub("_", "-", .) %>% intersect(rownames(seurat_integrated_ss@assays$RNA@counts))
+    gsub("_", "-", .) %>% intersect(rownames(seurat_integrated_ss@assays$RNA))
   cluster_genes[[c]] <- genes2
   
 }
@@ -113,7 +113,7 @@ one_cluster_genes <- sapply(clusters, one_cluster_genes_func, cluster_genes = cl
 
 mk_genes <- markers$T.dal.Ortholog %>% gsub(",", " ", .) %>% 
   str_split(" ") %>% unlist() %>% gsub("\\(|\\)", "", .) %>% 
-  gsub("_", "-", .) %>% intersect(rownames(seurat_integrated_ss@assays$RNA@counts))
+  gsub("_", "-", .) %>% intersect(rownames(seurat_integrated_ss@assays$RNA))
 
 new_name_func <- function(gene){
   nn <- paste(markers$`Drosophila.Marker.(Gene.Name)`[grep(gene, gsub("_", "-", markers$T.dal.Ortholog ))], collapse = ", ")
@@ -175,6 +175,7 @@ ggarrange(dps_all_figure, nfeatures_figure, UMAP, UMAP2, ncol = 4) %>%
 #0.4 clusters
 if (res == "integrated_snn_res.0.4"){
   Muscle <- c(15)
+  Muscle <- 
   Pre_meiotic_cyst <- c(6,7,11,0)
   Post_meiotic_cyst <- c(4,10)
   `GSC/Spermatogonia` <- c(1)

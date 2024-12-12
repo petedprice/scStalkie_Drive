@@ -10,6 +10,8 @@ rm(list = ls())
 load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_no_cellcycle_markers.RData")
 #load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_newref.RData")
 
+#load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_newref_Seurat5.1.RData")
+
 seurat_integrated$treatment <- "SR"
 seurat_integrated$treatment[grep("st", seurat_integrated$sample)] <- "ST"
 DefaultAssay(seurat_integrated) <- "integrated"
@@ -52,8 +54,8 @@ CT_noclusters <- clusttree$data %>%
 
 
 clustering_plots <- ggarrange(EP, CT, CT_noclusters, ncol = 1, nrow = 3)
-#ggsave("plots/clustering_plots.pdf", clustering_plots, height = 30, width = 30)
-#ggsave("plots/clustering_plots.png", clustering_plots, height = 30, width = 30)
+ggsave("plots/clustering_plots.pdf", clustering_plots, height = 30, width = 30)
+ggsave("plots/clustering_plots.png", clustering_plots, height = 30, width = 30)
 
 res <- 'integrated_snn_res.0.75'
 Idents(seurat_integrated) <- res
@@ -79,7 +81,7 @@ for (c in clusters){
   #genes<- markers$T.dal_marker[grepl(tolower(c), tolower(markers$Consensus_Marker))]
   genes2 <- genes %>% gsub(",", " ", .) %>% 
     str_split(" ") %>% unlist() %>% gsub("\\(|\\)", "", .) %>% 
-    gsub("_", "-", .) %>% intersect(rownames(seurat_integrated@assays$RNA@counts))
+    gsub("_", "-", .) %>% intersect(rownames(seurat_integrated@assays$RNA))
   cluster_genes[[c]] <- genes2
   
 }
@@ -101,7 +103,7 @@ one_cluster_genes <- sapply(clusters, one_cluster_genes_func, cluster_genes = cl
 
 mk_genes <- markers$T.dal.Ortholog %>% gsub(",", " ", .) %>% 
   str_split(" ") %>% unlist() %>% gsub("\\(|\\)", "", .) %>% 
-  gsub("_", "-", .) %>% intersect(rownames(seurat_integrated@assays$RNA@counts))
+  gsub("_", "-", .) %>% intersect(rownames(seurat_integrated@assays$RNA))
 
 new_name_func <- function(gene){
   nn <- paste(markers$`Drosophila.Marker.(Gene.Name)`[grep(gene, gsub("_", "-", markers$T.dal.Ortholog ))], collapse = ", ")
@@ -193,7 +195,8 @@ seurat_integrated@meta.data$celltype[seurat_integrated@meta.data$integrated_snn_
 #For old reference 
 no_cell_cycle_marker_unknown_cells_0.75 <- c(0,9,13,4)
 #For new reference 
-#no_cell_cycle_marker_unknown_cells_0.75 <- c(0,1, 15, 20,25) #15? 20?
+#no_cell_cycle_marker_unknown_cells_0.75 <- c(0,1, 15, 20,25)
+#no_cell_cycle_marker_unknown_cells_0.5 <- c(5,21)
 
 
 seurat_integrated@meta.data$celltype[seurat_integrated@meta.data$integrated_snn_res.0.75 %in%
@@ -202,6 +205,6 @@ seurat_integrated@meta.data$celltype[seurat_integrated@meta.data$integrated_snn_
 
 seurat_integrated_ss <- subset(seurat_integrated, (celltype %in% c("KEEP")))
 
-save(seurat_integrated_ss, file = "data/RData/integrated_seurat_nf200_mtr0.20_gu0_subset.RData")
+save(seurat_integrated_ss, file = "data/RData/integrated_seurat_nf200_mtr0.20_gu0_subset_old_ref.RData")
 ###############################################################
  

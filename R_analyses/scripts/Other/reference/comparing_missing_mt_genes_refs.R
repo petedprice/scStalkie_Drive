@@ -13,27 +13,19 @@ obj1 <- seurat_integrated
 load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_newref.RData")
 obj2 <- seurat_integrated
 
-dim(obj1)
-dim(obj2)
+load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_newref_Seurat5.1.RData")
+obj3 <- seurat_integrated
 
-# cells <- colnames(obj1)[1:100]
-# 
-# obj1 <- subset(obj1, cells = cells)
-# obj2 <- subset(obj2, cells = cells)
 
 md1 <- obj1@meta.data[,c("cells", "mitoRatio", "nCount_RNA", "nFeature_RNA", "nFeature_SCT")]
 md2 <- obj2@meta.data[,c("cells", "mitoRatio", "nCount_RNA", "nFeature_RNA", "nFeature_SCT")]
-
-md <- merge(md1, md2, by = "cells")
-
-(md$mitoRatio.x < md$mitoRatio.y) %>% sum()
+md3 <- obj3@meta.data[,c("cells", "mitoRatio", "nCount_RNA", "nFeature_RNA", "nFeature_SCT")]
 
 
-missing_cells <- md2$cells[which(!md2$cells %in% md1$cells)]
-length(missing_cells)
+md2_unique_cells <- md2$cells[which(!md2$cells %in% md3$cells)]
+md3_unique_cells <- md3$cells[which(!md3$cells %in% md2$cells)]
 
-missing_md <- md2[md2$cells %in% missing_cells,]
-View(missing_md)
-View(md1)
+md2_unique_cells[1]
+md3_unique_cells[1]
 View(md2)
-
+View(md3)

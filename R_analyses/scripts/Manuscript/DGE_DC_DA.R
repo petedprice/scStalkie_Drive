@@ -39,6 +39,7 @@ Agenes <- filter(ortholog_table, chr %in% c("Chr_1", "Chr_2"))$REF_GENE_NAME %>%
   gsub("_", "-", .) %>% 
   intersect(rownames(seurat_final))%>% unique()
 
+seurat_final <- JoinLayers(seurat_final)
 sce <- seurat_final %>% as.SingleCellExperiment(assay = "RNA")
 
 ################################################################################
@@ -239,7 +240,6 @@ tmp <- dif_exp_data %>%
          "Drosophila ortholog" = consensus_gene) %>% 
   .[,c(1,7,2,5,3,4,6)]
 
-unique(dif_exp_data$celltype)
 
 
 celltypes <- c("M", "EC", "LC", "GSC", "PS", "SS", "S")

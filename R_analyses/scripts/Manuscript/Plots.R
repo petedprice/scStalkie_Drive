@@ -48,6 +48,7 @@ Agenes <- filter(ortholog_table, chr %in% c("Chr_1", "Chr_2"))$REF_GENE_NAME %>%
   intersect(rownames(seurat_final))%>% unique()
 
 nFeatures_RNA_autosomes <- colSums(seurat_final@assays$RNA$counts[Agenes,] > 0)
+
 seurat_final <- AddMetaData(seurat_final, nFeatures_RNA_autosomes, 'nFeature_RNA_autosomes')
 
 X_exp <- PercentageFeatureSet(seurat_final, features = Xgenes)
