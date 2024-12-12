@@ -25,6 +25,7 @@ split_seurat <-list()
 for (sobj in seurat_objs){
 	load(sobj)
 	print("SCT transform")
+        
 	doublet_seurat <- SCTransform(doublet_seurat, vars.to.regress =
                                 c("nUMI","mitoRatio"))
 #	doublet_seurat <- SCTransform(doublet_seurat, vars.to.regress =

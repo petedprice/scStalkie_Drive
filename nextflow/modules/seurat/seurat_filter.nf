@@ -9,6 +9,8 @@ process seurat_filter {
 
     publishDir 'initial_QC', mode: 'copy', overwrite: true, pattern: '*QC_plots'
 
+    //conda 'conda-forge::r-seurat=5.1.0'
+
     input: 
     tuple val(species), val(sample), file("${sample}_crdata"), val(ref), val(mt), val(nfs), val(mtr), val(gu)
 
@@ -18,10 +20,7 @@ process seurat_filter {
     script:
     """
     #!/bin/bash
-
-    cat ${params.gtf_dir}/${ref}.gtf | grep $mt | grep gene_id > ss.gtf
-    cut -f9 ss.gtf | cut -d ";" -f1 | cut -d " " -f2 | uniq | sed 's/"//g' > mt_genes.txt
-
+    echo \$PATH
     cat ${params.metadata} | grep ${sample} > metadata_ss.csv   
 
     Rscript ${projectDir}/Rscripts/seurat/seurat_filter.R \
@@ -29,7 +28,7 @@ process seurat_filter {
 	 ${sample}_crdata/outs/filtered_feature_bc_matrix \
 	 . \
 	metadata_ss.csv \
-	mt_genes.txt \
+	${params.mt_genes} \
 	$nfs \
 	$mtr \
 	$gu
