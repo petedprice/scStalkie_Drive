@@ -22,17 +22,18 @@ rm(list = ls())
 load("data/RData/seurat_final.RData")
 load("data/RData/DEG_DC.RData")
 load("data/trajectory/sce_GAMed.RData")
-load("data/RData/traj_analyis.RData")
+load("data/RData/Old_objects/traj_analyis.RData")
 
+seurat_final <- JoinLayers(seurat_final)
 Idents(seurat_final) <- "celltype"
 levels(seurat_final) <- c("Muscle", "Early cyst", "Late cyst", 
                           "GSC/Spermatogonia", "Primary spermatocytes", 
-                          "Secondary spermatocytes", "Spermatids")
+                          "Secondary spermatocytes", "Early spermatids", "Late spermatids")
 seurat_final@meta.data <- seurat_final@meta.data %>%  
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids")))
+                                                "Early spermatids", "Late spermatids")))
 
 DefaultAssay(seurat_final) <- "RNA"
 
@@ -40,6 +41,35 @@ ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
 
+## MARKER GENES ##
+markers <- read.xlsx("data/MANUSCRIPT/Drive Manuscript Supplementary Tables.xlsx", sheet = 2)[1:30,c(1:6)] 
+row_order <- c("M", "CYSC", "EC", "LC", "C", "E", "G", "G, PS", "PS, SS", "PS, SS, ST", "PS, ST", "ST", "LST")
+markers$Drosophila.cell.type <- factor(markers$Drosophila.cell.type, levels = row_order)
+markers <- markers[order(markers$Drosophila.cell.type),]
+
+mk_genes <- markers$Teleopsis.dalmanni.Ortholog %>% gsub(",", " ", .) %>% 
+  str_split(" ") %>% unlist() %>% 
+  gsub("_", "-", .) %>% intersect(rownames(seurat_final@assays$RNA))
+
+
+new_name_func <- function(gene){
+  nn <- paste(markers$`Drosophila.Marker.(Gene.Name)`[
+    grep(gene, gsub("_", "-", markers$Teleopsis.dalmanni.Ortholog ))], 
+    collapse = ", ")
+  nn2 <- paste0(nn , " (", gene, ")")
+  return(nn)
+}
+
+new_names <- sapply(mk_genes, new_name_func)
+#duplicate genes
+rm <- c("PB.4544", "PB.4546", "gene−9679", "STRG.14307", "g9515")
+all_figure_markers <- new_names[!names(new_names) %in% rm]
+all_figure_markers <- all_figure_markers[-which(duplicated(all_figure_markers))]
+
+main_figure_markers <- all_figure_markers[c(1,3:7,14,15,18,21,23,25,24,26,28)]
+
+
+## AUTOSOMAL AND X-LINKED GENES ##
 Xgenes <- filter(ortholog_table, chr == "Chr_X")$REF_GENE_NAME %>% 
    gsub("_", "-", .) %>% 
    intersect(rownames(seurat_final)) %>% unique()
@@ -62,12 +92,12 @@ seurat_final <- AddMetaData(object = seurat_final, metadata = Xgene_prop, col.na
 ### TITLE CHANGES FOR PLOTS ###
 gene_names <- names(main_figure_markers)
 mfms <- stringr::str_split(main_figure_markers, "\\(", simplify = T)[,1]
-mfms[13] <- 'cup'
+mfms[14] <- 'cup'
 names(mfms) <- gene_names
 
 gene_names_all_markers <- names(all_figure_markers)
 afms <- stringr::str_split(all_figure_markers, "\\(", simplify = T)[,1]
-afms[24] <- 'cup'
+afms[26] <- 'cup'
 names(afms) <- gene_names_all_markers
 
 rm_axis = theme(axis.title.x=element_blank(),
@@ -78,7 +108,7 @@ rm_axis = theme(axis.title.x=element_blank(),
 
 ######################### MAIN FIGURE PLOTS ######################### 
 
-cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "yellow3", "#0072B2", "#D55E00", "#CC79A7")
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "yellow3", "#0072B2", "#D55E00", "#CC79A7", 'grey')
 
 expected_X_exp <- filter(ortholog_table, chr == "Chr_X") %>%
   dplyr::select(REF_GENE_NAME) %>% 
@@ -162,7 +192,7 @@ DC_plot <- XA %>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>% 
+                                                "Early spermatids", "Late spermatids"))) %>% 
   mutate(Chromosome = Chr) %>% 
   ggplot(aes(x = celltype, y = (XA), fill = treatment)) + geom_boxplot(outlier.alpha = 0.2) + 
   labs(x = "", y = "log(CPM)", fill = "Chromosome") + #add sig values between Chrs
@@ -264,7 +294,7 @@ DC_plot_SR <-  XA %>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>% 
+                                                "Early spermatids", "Late spermatids"))) %>% 
   mutate(treatment = factor(treatment, levels = c("ST", "SR"))) %>% 
   mutate(Chromosome = Chr) %>% 
   ggplot(aes(x = celltype, y = (XA), fill = treatment)) + geom_boxplot(outlier.alpha = 0.2) + 
@@ -288,7 +318,7 @@ dif_exp_figure <- dif_exp_data %>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>% 
+                                                "Early spermatids", "Late spermatids"))) %>% 
   mutate(chr = ifelse(chr == "Chr_X", "X", "Autosomes")) %>%
   mutate(Significant = ifelse(Significant != 'Unbiased', "Biased", "Unbiased")) %>% 
   dplyr::count(celltype, Significant, chr) %>%
@@ -328,7 +358,7 @@ C <- (traj_umap)
 AB <- plot_grid(A, B, align = 'v', axis = 'l', nrow = 2, labels = c("(a)", "(b)"), rel_heights = c(3,2))
 Fig2 <- plot_grid(AB, C,  ncol = 2, labels = c("", "(c)"), rel_widths = c(2,2))
 ggsave("plots/FIG2.pdf", Fig2, width = 7, height = 3.5)
-#system("open plots/FIG2.pdf")
+system("open plots/FIG2.pdf")
 
 
 #Figure 3
@@ -446,7 +476,7 @@ S4_data <- ortholog_table %>%
    mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
                                                  "Late cyst", "GSC/\nSpermatogonia", 
                                                  "Primary\n spermatocytes", "Secondary\n spermatocytes", 
-                                                "Spermatids")))
+                                                "Early spermatids", "Late spermatids")))
 
 S4a_lines <- S4_data %>% 
   group_by(celltype, chromosome) %>% 
@@ -552,7 +582,7 @@ dif_exp_data <- dif_exp_data %>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids")))
+                                                "Early spermatids", "Late spermatids")))
 
 dif_exp_data$celltype <- as.vector(dif_exp_data$celltype)
 
@@ -642,7 +672,7 @@ S8_dif_exp_data <- dif_exp_data %>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
                                                 "Late cyst", "GSC/\nSpermatogonia", 
                                                 "Primary\n spermatocytes", "Secondary\n spermatocytes", 
-                                                "Spermatids"))) %>% 
+                                                "Early spermatids", "Late spermatids"))) %>% 
   ggplot(aes(x = start/1000000, y = logFC, alpha = alpha,  colour = Significant)) + geom_point() +
   theme_classic() + 
   facet_grid(celltype ~ chr, switch = "both", scales = 'free_x') +

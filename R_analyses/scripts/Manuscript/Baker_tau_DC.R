@@ -14,15 +14,54 @@ ortholog_table$REF_GENE_NAME<- gsub("gene_", "gene-", ortholog_table$REF_GENE_NA
 ortholog_table$consensus_gene<- gsub("gene_", "gene-", ortholog_table$consensus_gene)
 
 tau_data <- openxlsx::read.xlsx('data/Baker2016_S2_Dataset_rev.xlsx')  #
-filtered_tau <- tau_data %>% 
-  filter(!is.na(Symbol))%>% 
-  dplyr::select(c('Symbol', 'Tau', 'FBID', 'Tissue.Specificity.I', 'Tissue.Specificity.II')) %>% 
-  unique() %>% 
-  group_by(Symbol) %>%
-  filter(n() == 1)
+columns <- c('Symbol', 'FBID', 
+             'Ave_Head', 'Ave_Female', 
+             'Ave_Larva', 'Ave_Male', 'Ave_Ovaries', 
+             'Ave_Testes', "Tau")
 
-table(tau_data$Tissue.Specificity.I)
-table(filtered_tau$Tissue.Specificity.I)
+tau_data_cndsd <- tau_data[,columns] %>% 
+  group_by(FBID) %>% 
+  summarise(Ave_Male = mean(Ave_Male),
+            Ave_Female = mean(Ave_Female),
+            Ave_Larva = mean(Ave_Larva),
+            Ave_Head = mean(Ave_Head),
+            Ave_Ovaries = mean(Ave_Ovaries),
+            Ave_Testes = mean(Ave_Testes),
+            Tau = mean(Tau),
+            n = n()) %>% 
+  mutate(dup = ifelse(n > 1, "dup", "sing"))
+
+
+#re-calc tau 
+tau_function <- function(exp_vals){
+  vals <- c(2:7) %>% c()
+  tissue <- colnames(exp_vals)[vals] %>% c()
+  exp <- exp_vals[,vals] %>% c() %>% unlist()
+  x_hat <- exp/max(exp) %>% c()
+  xhat_1 <- 1-x_hat %>% c()
+  N=length(exp) %>% c()
+  tau <- sum(xhat_1)/(N-1) %>% c()
+  if (tau >= 0.9){
+    ts <- tissue[which.max(x_hat)]
+  } else {
+    ts <- "Universal"
+  }
+  
+  ts <- gsub("Ave_", "", ts)
+  
+  out <- data.frame(tau2 = tau, ts = ts)
+  return(out)  
+}
+
+
+tau2s <- data.frame(tau2 = NA, ts = NA)
+for (i in 1:nrow(tau_data_cndsd)){
+  tau_tmp <- tau_function(tau_data_cndsd[i,])
+  tau2s <- rbind(tau2s, tau_tmp)
+}
+tau2s <- tau2s[!is.na(tau2s[,1]),]
+tau_data_cndsd <- cbind(tau_data_cndsd, tau2s)
+
 
 ortho_XA <- ortholog_table %>% 
   dplyr::select(REF_GENE_NAME, consensus_gene, FBconcensus) %>% 
@@ -31,34 +70,74 @@ ortho_XA <- ortholog_table %>%
   filter(Chr == "X")
 
 tau_final <- ortho_XA %>% 
-  merge(filtered_tau[,c('Symbol', 'Tau', 'FBID', 'Tissue.Specificity.I', 'Tissue.Specificity.II')], 
+  merge(tau_data_cndsd, 
         by.x = 'FBconcensus', by.y = 'FBID', all.x = T) %>% 
   unique()
 
 
 tau_final %>% 
-  filter(Chr == "X"  & treatment == "ST") %>% 
-  filter(Tissue.Specificity.I %in% c("T", "TO", "U", "L", "H")) %>% 
-  ggplot(aes(x = celltype, y = XA, fill = Tissue.Specificity.I)) + geom_boxplot()#geom_jitter(alpha = 0.1) +
+  filter(Chr == "X" & logcpm >= 1 & treatment == "ST") %>% 
+  filter(ts %in% c("Testes", "Universal")) %>% 
+  ggplot(aes(x = celltype, y = XA, fill = ts, colour = ts)) + geom_boxplot() + 
+  labs(x = "", y = "log(CPM)", fill = "Tau class") + 
+  stat_compare_means( aes(label = ..p.signif..), 
+                      label.x = 1.5, label.y = 7, method = 'wilcox.test', method.args = list(alternative = 'two.sided'),
+                      symnum.args = list(
+                        cutpoints = c(0, 0.00001, 0.001, 0.05, 1), 
+                        symbols = c("***", "**", "*", " ")), size = 7) + 
+  geom_hline(yintercept = c(0,-1), linetype = 'dashed', colour = 'black') + 
+  theme_classic() + scale_fill_brewer(palette = 'Paired') + 
+  scale_y_continuous(breaks=c(0.0, 5.0, 10.0, 15.0, 20.0)) + 
+  theme(legend.position="top", 
+        axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black")) +
+  ylab(expression(log[2]~X:A~expression~ratio)) + 
+  scale_y_continuous(breaks=c(-5,0,5)) + 
+  geom_jitter()
 
 
 tau_final %>% 
-  ggplot(aes(x = logcpm, y = Tau)) + geom_point() + 
-  facet_wrap(~ Tissue.Specificity.II + celltype)
+  filter(Chr == "X" & logcpm >= 1 & treatment == "ST") %>% 
+  filter(ts %in% c("Testes", "Universal")) %>% 
+  group_by(celltype, ts) %>% 
+  summarise(mean = median(XA), 
+            var = var(XA))
+x1 <- tau_final %>% filter(Chr == "X" & logcpm >= 1 & treatment == "ST") %>% 
+  filter(ts %in% c("Testes", "Universal")) %>% 
+  filter(celltype == "Muscle" & ts == "Testes")
+x2 <- tau_final %>% filter(Chr == "X" & logcpm >= 1 & treatment == "ST") %>% 
+  filter(ts %in% c("Testes", "Universal")) %>% 
+  filter(celltype == "Muscle" & ts == "Universal")
 
-#####################
-XA
+
+t.test(x1$XA, x2$XA)
+
+#  scale_fill_manual(values ="Set2") +
+  stat_compare_means(aes(label = ..p.signif..),  method = 'wilcox.test', method.args = list(alternative = 'two.sided'),
+                      symnum.args = list(
+                        cutpoints = c(0, 0.00001, 0.001, 0.05, 1),
+                        symbols = c("***", "**", "*", " ")), size = 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 testis_genes <- filter(XA, celltype == "Early cyst") %>% 
   filter(Chr == "X" & logcpm >= 1 & treatment == "ST") %>% 
   merge(unique(ortholog_table[,c("REF_GENE_NAME", "consensus_gene")]), by.x = 'genes', by.y = "REF_GENE_NAME")
 
-XA %>% 
-  filter(Chr == "X" & logcpm >= 1 & treatment == "ST") %>% 
-  ggplot(aes(x = XA)) + geom_density() + facet_wrap(~celltype)
 
-testis_genes %>% 
-  ggplot(aes(x = logcpm, y = XA)) + geom_point()
 
 compensated <- testis_genes %>% 
   filter(XA >= 0.2)

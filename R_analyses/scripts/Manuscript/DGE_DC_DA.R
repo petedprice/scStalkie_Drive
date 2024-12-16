@@ -106,9 +106,6 @@ PBDGE <- function(label, sce, func = 'custom', seurat_obj = seurat_final, consis
 de.results_act_edger <- sapply(unique(agg_cell_types$celltype), PBDGE, sce = agg_cell_types, func = 'custom',
                                USE.NAMES = T, simplify = F)
 
-de.results_act_edger$`Primary spermatocytes`$toptags$table %>% as.data.frame() %>% mutate(gene = rownames(.)) %>% View()
-de.results_act_edger$`Primary spermatocytes`$y$counts %>% as.data.frame() %>% mutate(gene = rownames(.)) %>% View()
-
 
 cols <- c("treatment", "celltype", "sample")
 get_cpm_values_func <- function(x){
@@ -129,7 +126,7 @@ get_cpm_values_func <- function(x){
 }  
 
 tidy_cpm_edger <- lapply(de.results_act_edger, get_cpm_values_func) %>% bind_rows()
-tidy_cpm_edger$func <- "edgeR"
+tidy_cpm_edger$func <- "custom"
 
 ################ Medians approach for dosage compensation ------
 medianAs <- tidy_cpm_edger %>% 
@@ -144,7 +141,7 @@ XA <- tidy_cpm_edger %>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>% merge(medianAs) %>% 
+                                                "Early spermatids", "Late spermatids"))) %>% merge(medianAs) %>% 
   group_by(celltype, genes, Chr, treatment, medianA) %>% 
   summarise(logcpm = log2(mean(2^logcpm))) %>% 
   #group_by(sample, celltype, treatment, func, Chr) %>%
@@ -191,7 +188,7 @@ model1 <- dif_exp_data %>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>%
+                                                "Early spermatids", "Late spermatids"))) %>%
   glm(Significant ~chr, family = binomial, data = .)
 
 model2 <- dif_exp_data %>% 
@@ -200,7 +197,7 @@ model2 <- dif_exp_data %>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>%
+                                                "Early spermatids", "Late spermatids"))) %>%
   glm(Significant ~1 +celltype, family = binomial, data = .)
 
 model3 <- dif_exp_data%>% 
@@ -209,7 +206,7 @@ model3 <- dif_exp_data%>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>%
+                                                "Early spermatids", "Late spermatids"))) %>%
   glm(Significant ~celltype + chr, family = binomial, data = .)
 
 
@@ -219,7 +216,7 @@ model4 <- dif_exp_data %>%
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>%
+                                                "Early spermatids", "Late spermatids"))) %>%
   glm(Significant ~(chr * celltype), family = binomial, data = .)
 
 anova(model1, model3, test = "Chisq")
@@ -228,7 +225,7 @@ anova(model2, model3, test = "Chisq")
 anova(model3, model4, test = "Chisq")
 
 #Model 3 is best fit 
-summary(model4)$coefficients %>% 
+summary(model3)$coefficients %>% 
   write.table("data/DEG_model3_coefficients.tsv", sep = "\t", quote = F, row.names = T)
 
 tmp <- dif_exp_data %>% 
@@ -242,9 +239,9 @@ tmp <- dif_exp_data %>%
 
 
 
-celltypes <- c("M", "EC", "LC", "GSC", "PS", "SS", "S")
+celltypes <- c("M", "EC", "LC", "GSC", "PS", "SS", "EST", "LST")
 names(celltypes) <- c("Muscle", "Early cyst", "Late cyst", "GSC/Spermatogonia", 
-                                   "Primary spermatocytes", "Secondary spermatocytes", "Spermatids")
+                                   "Primary spermatocytes", "Secondary spermatocytes", "Early spermatids", "Late spermatids")
 
 make_df_func <- function(tmp, celltype){
   tmp2 <- tmp %>% 
@@ -256,7 +253,7 @@ make_df_func <- function(tmp, celltype){
 }
 
 sig_dif_exp1 <- lapply(names(celltypes), make_df_func, tmp = tmp) %>% 
-  reduce(full_join, by = c("Gene", "chr", "Drosophila ortholog"))
+  purrr::reduce(full_join, by = c("Gene", "chr", "Drosophila ortholog"))
 sig_dif_exp1[is.na(sig_dif_exp1)] <- "Low Exp"
 keep <- which(rowSums(sig_dif_exp1 == "SR-biased" | sig_dif_exp1 == "ST-biased") > 0)
 sig_dif_exp1 <- sig_dif_exp1[keep,]
@@ -268,6 +265,10 @@ write.table(sig_dif_exp1, "data/DEG_full_table.tsv", sep = "\t", quote = F, row.
 dif_exp_data_table %>% 
   .[c(3,4,7,8,5,6,1,2,9:14),] %>% 
   write.table(., "data/DEG_table.tsv", sep = "\t", quote = F, row.names = F)
+
+
+
+
 
 
 

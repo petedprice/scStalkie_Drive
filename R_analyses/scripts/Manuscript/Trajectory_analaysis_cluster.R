@@ -2,9 +2,9 @@ library(Seurat)
 library(dplyr)
 library(princurve, lib = '.')
 library(TrajectoryUtils, lib = '.')
-
 library(slingshot, lib = '.')
 library(tradeSeq, lib = '.')
+
 #install.packages("princurve", lib = '.')
 #BiocManager::install("TrajectoryUtils", lib = '.')
 
@@ -14,24 +14,24 @@ run_type = args[2]
 
 
 Idents(seurat_final) <- seurat_final$celltype
-
+seurat_final <- JoinLayers(seurat_final)
 DefaultAssay(seurat_final) <- "RNA"
-seurat_final@meta.data$celltype[seurat_final$integrated_snn_res.0.4 == 5] <- "Late spermatids"
 Idents(seurat_final) <- seurat_final$celltype
-keep_clusters <- c("GSC/Spermatogonia", "Primary Spermatocytes", "Spermatocytes", "Secondary Spermatocytes", "Spermatids", "Late spermatids")
+keep_clusters <- c("GSC/Spermatogonia", "Primary spermatocytes", "Spermatocytes", "Secondary spermatocytes", "Early spermatids", "Late spermatids", "Spermatids")
 keep_clusters <- keep_clusters[keep_clusters %in% unique(seurat_final$celltype)]
 
-rm_cells = c("sr5_GAGGGTACACCTAAAC-1", "sr5_GATAGAAAGCCTATCA-1",
-"st1_AAGTTCGGTATTGGCT-1", "sr5_AAGCATCTCGTGGCTG-1", "sr5_ACGTAGTAGTCAACAA-1", "sr5_CAAGGGATCTATTGTC-1", 
-"sr5_GACCCTTAGTGTCATC-1", "sr5_GACCGTGCATTGCTTT-1", "sr5_GATTCTTCACCAAATC-1", 
-"sr5_GCATCTCGTACACTCA-1", "sr5_GGACGTCGTAGGAGGG-1", "sr5_TAAGTCGAGACATAAC-1",
-"sr5_TCCAGAAAGGCAGGTT-1", "sr5_TCGCACTCACGCCACA-1", "sr5_TGTTGGACACAGACGA-1", "sr5_TTCGATTCAAAGGGTC-1")
+# 
+# rm_cells = c("sr5_GAGGGTACACCTAAAC-1", "sr5_GATAGAAAGCCTATCA-1",
+# "st1_AAGTTCGGTATTGGCT-1", "sr5_AAGCATCTCGTGGCTG-1", "sr5_ACGTAGTAGTCAACAA-1", "sr5_CAAGGGATCTATTGTC-1", 
+# "sr5_GACCCTTAGTGTCATC-1", "sr5_GACCGTGCATTGCTTT-1", "sr5_GATTCTTCACCAAATC-1", 
+# "sr5_GCATCTCGTACACTCA-1", "sr5_GGACGTCGTAGGAGGG-1", "sr5_TAAGTCGAGACATAAC-1",
+# "sr5_TCCAGAAAGGCAGGTT-1", "sr5_TCGCACTCACGCCACA-1", "sr5_TGTTGGACACAGACGA-1", "sr5_TTCGATTCAAAGGGTC-1")
 
 sce <- seurat_final %>% 
   subset(., idents = keep_clusters) %>% 
   as.SingleCellExperiment(., assay = 'RNA')
 
-sce <- sce[,!colnames(sce) %in% rm_cells]
+#sce <- sce[,!colnames(sce) %in% rm_cells]
 
 sce <- slingshot(sce, clusterLabels = 'celltype', reducedDim = "UMAP", start.clus = 'GSC/Spermatogonia',
                  end.clus = 'Late spermatids')
