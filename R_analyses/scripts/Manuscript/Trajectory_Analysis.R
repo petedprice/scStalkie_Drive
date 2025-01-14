@@ -19,9 +19,10 @@ rm(list = ls())
 
 
 load("data/RData/seurat_final.RData")
-load("data/trajectory/sce_GAMed.RData")
+load("data/trajectory/sce_GAMed_8k.RData")
 load("data/RData/DEG_DC.RData")
 
+seurat_final <- JoinLayers(seurat_final)
 Idents(seurat_final) <- seurat_final$celltype
 DefaultAssay(seurat_final) <- "RNA"
 
@@ -56,13 +57,14 @@ seurat_final <- seurat_final %>%
 
 
 ################################################################################
+
 # Pseudotime analysis
 Pseudotime_data <- reducedDims(sce)$UMAP %>% as.data.frame() %>% 
   merge(seurat_final@meta.data, by.x = 0, by.y = 'cells', all.y = F) %>% 
   mutate(cells = Row.names)
 
-sce <- slingshot(sce, clusterLabels = 'celltype', reducedDim = "UMAP", start.clus = 'GSC/Spermatogonia',
-                 end.clus = 'Late spermatids')
+#sce <- slingshot(sce, clusterLabels = 'celltype', reducedDim = "UMAP", start.clus = 'GSC/Spermatogonia',
+#                 end.clus = 'Late spermatids')
 
 
 traj_line <- SlingshotDataSet(sce)@curves$Lineage1
@@ -70,12 +72,13 @@ traj_line <- SlingshotDataSet(sce)@curves$Lineage1
 pts <- data.frame(Pseudotime = c(unlist(traj_line[[3]])), 
                   cells = names(c(unlist(traj_line[[3]]))))
 
+
 Pseudotime_data <- Pseudotime_data %>% 
   merge(pts, by = 'cells') %>% 
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
-                                                "Spermatids"))) %>% 
+                                                "Early spermatids", "Late spermatids"))) %>% 
   mutate('Cell type' = celltype)
 
 
@@ -86,49 +89,71 @@ Pseudotime_data <- Pseudotime_data %>%
 ST_cells <- filter(seurat_final@meta.data, treatment == "ST")$cells %>% intersect(colnames(sce_trad))
 SR_cells <- filter(seurat_final@meta.data, treatment == "SR")$cells %>% intersect(colnames(sce_trad))
 
-ST_keep <- rowSums(counts(sce_trad[,ST_cells]) > 1) > (0.1 * length(ST_cells))
-SR_keep <- rowSums(counts(sce_trad[,SR_cells]) > 1) > (0.1 * length(SR_cells))
+ST_keep <- rowSums(counts(sce_trad[,ST_cells]) > 1) >= (0.1 * length(ST_cells))
+SR_keep <- rowSums(counts(sce_trad[,SR_cells]) > 1) >= (0.1 * length(SR_cells))
 keep <- ST_keep | SR_keep
 
-sce_trad <- sce_trad[keep,]
-rowData(sce_trad)$assocRes <- associationTest(sce_trad, lineages = T, l2fc = log(2))
-assocRes <- rowData(sce_trad)$assocRes
+sce_trad_filt1 <- sce_trad[keep,]
+rowData(sce_trad_filt1)$assocRes <- associationTest(sce_trad_filt1, lineages = T, l2fc = 1)
+assocRes <- rowData(sce_trad_filt1)$assocRes
 
 assocRes$ST_padj <- p.adjust(assocRes$pvalue_lineage1_conditionST, "fdr")
 assocRes$SR_padj <- p.adjust(assocRes$pvalue_lineage1_conditionSR, "fdr")
 
-assocRes <- filter(assocRes, ST_padj < 0.05 | SR_padj < 0.05)
+assocRes <- filter(assocRes, ST_padj < 0.001 | SR_padj < 0.001)
 assocRes <- assocRes[is.na(assocRes$waldStat) == F,]
-
-sce_trad <- sce_trad[rownames(assocRes),]
-
-gois1 <- rownames(assocRes)[assocRes$ST_padj <=0.05] %>% .[!is.na(.)]
-
-smooth_ST_genes <- predictSmooth(sce_trad, gene = gois1, nPoints = 100, tidy = F)
-heatmap_ST <- pheatmap::pheatmap(t(scale(t(smooth_ST_genes[, 1:50]))),
-                                      cluster_cols = FALSE,
-                                      show_rownames = FALSE, 
-                                      show_colnames = FALSE)
+dim(assocRes)
+sce_trad_filt2 <- sce_trad_filt1[rownames(assocRes),]
 
 
-condRes <- conditionTest(sce_trad, l2fc = 2) %>% 
+condRes <- conditionTest(sce_trad_filt2, l2fc = 1) %>% 
   mutate(gene = rownames(.)) %>% 
-  merge(ortholog_table, by.x = 'gene', by.y = 'REF_GENE_NAME', all.y = F)
+  merge(ortholog_table, by.x = 'gene', by.y = 'REF_GENE_NAME', all.y = F) %>% 
+  mutate(padj = p.adjust(pvalue, "fdr")) %>% 
+  filter(padj < 0.001 & !is.na(waldStat)) %>% 
+  top_n(., 500, waldStat)
 
-condRes$padj <- p.adjust(condRes$pvalue, "fdr")
-condRes <- filter(condRes, padj < 0.05 & !is.na(waldStat)) 
-
-oo <- order(condRes$waldStat, decreasing = TRUE)
+dim(condRes)
 condRes %>% 
   mutate(consensus_gene = ifelse(consensus_gene == gene, " ", consensus_gene)) %>%
   rename(`Teleopsis dalmanni Gene` = gene, 
          `Chr` = chr, `Drosophila ortholog` = consensus_gene, `FDR-adjusted p-value` = padj
          ) %>% 
+  dplyr::mutate(across(where(is.numeric), round, 4)) %>% 
   .[,c("Teleopsis dalmanni Gene", "Drosophila ortholog", "Chr", "waldStat", "df", 
        "pvalue", "FDR-adjusted p-value")] %>% 
   
   write.table(., "data/MANUSCRIPT/differential_trajectories.tsv", sep = "\t", quote = F, row.names = F)
 
+
+# GO term enrichment 
+
+background <- filter(ortholog_table, REF_GENE_NAME %in% rownames(assocRes)) 
+GO_data <- condRes 
+ 
+ego <- enrichGO(gene          = unique(GO_data$consensus_gene), 
+                  universe = unique(background$consensus_gene),
+                OrgDb         = org.Dm.eg.db, 
+                keyType = 'SYMBOL',
+                ont           = "ALL",
+                pAdjustMethod = "fdr",
+                pvalueCutoff  = 1,
+                qvalueCutoff  = 1, readable= TRUE) %>% 
+  as.data.frame()
+
+
+ego <- ego %>% 
+  as.data.frame() %>% #round all numeric value to 3dp
+  filter(pvalue < 0.05) %>% 
+  dplyr::mutate(across(where(is.numeric), round, 4))
+
+View(ego)
+
+
+write.table(ego, "data/MANUSCRIPT/TRADESEQ_GO_terms.tsv", sep = "\t", quote = F, row.names = F)
+system("open data/MANUSCRIPT/TRADESEQ_GO_terms.tsv")
+
+############## CANDIDATE GENES ############
 # most significant gene
 Smoother_func <- function(sce_trad, gn, ot = ortholog_table){
   chr = filter(ot, REF_GENE_NAME == gn)$chr
@@ -143,38 +168,16 @@ Smoother_func <- function(sce_trad, gn, ot = ortholog_table){
   plot <- plotSmoothers(sce_trad, assays(sce_trad)$counts,
                         gene = gn,
                         alpha = 1, border = TRUE, curvesCols = c("#FC8D62", "#66C2A5")
-                        ) + 
+  ) + 
     ggtitle(title) +
     scale_color_manual(values = c("#FC8D62", "#66C2A5"), labels = c("SR", "ST"), name = "") + 
-    guides(colour = guide_legend(override.aes = list(size = 2))) + 
+    guides(colour = guide_legend(override.aes = list(size = 4))) + 
     theme(legend.position = 'bottom', 
-          legend.text = element_text(size = 15)) + labs(x = "", y = "")
+          legend.text = element_text(size = 24)) + labs(x = "", y = "")
   
 }
 
-# GO term enrichment 
 
-background <- filter(ortholog_table, REF_GENE_NAME %in% rownames(assocRes)) 
-GO_data <- condRes 
-
-ego <- enrichGO(gene          = unique(GO_data$consensus_gene), 
-                  universe = unique(background$consensus_gene),
-                OrgDb         = org.Dm.eg.db, 
-                keyType = 'SYMBOL',
-                ont           = "ALL",
-                pAdjustMethod = "bonferroni",
-                pvalueCutoff  = 0.05,
-                qvalueCutoff  = 0.05, readable= TRUE)
-
-
-ego <- ego %>% #round all numeric value to 3dp
-  dplyr::mutate(across(where(is.numeric), round, 4))
-
-
-write.table(ego, "data/MANUSCRIPT/TRADESEQ_GO_terms.tsv", sep = "\t", quote = F, row.names = F)
-system("open data/MANUSCRIPT/TRADESEQ_GO_terms.tsv")
-
-############## CANDIDATE GENES ############
 
 DGE_DI <- merge(dif_exp_data, condRes, by.x = 'genes', by.y = 'gene', all = F) %>% 
   filter(Significant != 'Unbiased') %>% 
@@ -187,12 +190,10 @@ DGE_DI <- merge(dif_exp_data, condRes, by.x = 'genes', by.y = 'gene', all = F) %
 gois <- DGE_DI$genes %>% unique()
 
 plots <- lapply(gois, Smoother_func, sce_trad = sce_trad)
-arranged <- ggarrange(plotlist = plots, ncol =4, nrow = 5, common.legend = T) + 
-  theme(legend.text = element_text(size = 30), # Change legend text size
-        legend.title = element_text(size = 30))
+arranged <- ggarrange(plotlist = plots, ncol =4, nrow = 5, common.legend = T)
 arranged <- annotate_figure(arranged, bottom = text_grob("Pseudotime", size = 14, vjust = -0.5), left = text_grob("log(expression + 1)", , size = 14, rot = 90, vjust = 1))
-ggsave("plots/S9_TRADESEQ2_top20_genes.pdf", arranged, width = 15, height = 12)
-system("open plots/S9_TRADESEQ2_top20_genes.pdf")
+ggsave("plots/S11_TRADESEQ2_top20_genes.pdf", arranged, width = 15, height = 12)
+system("open plots/S11_TRADESEQ2_top20_genes.pdf")
 
 
 ################################################################################

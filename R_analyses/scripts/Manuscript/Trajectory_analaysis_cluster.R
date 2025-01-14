@@ -1,9 +1,10 @@
 library(Seurat)
 library(dplyr)
-library(princurve, lib = '.')
-library(TrajectoryUtils, lib = '.')
+library(princurve)
+library(TrajectoryUtils)
 library(slingshot, lib = '.')
 library(tradeSeq, lib = '.')
+library(DelayedMatrixStats, lib = '.')
 
 #install.packages("princurve", lib = '.')
 #BiocManager::install("TrajectoryUtils", lib = '.')
@@ -56,8 +57,8 @@ if (run_type == "eval_k"){
   icMat <- load(file = "icMat.RData")
   #FItting GAM
   sce_trad <- fitGAM(counts = counts(sce), pseudotime = pseudotime, 
-              cellWeights = cellWeights, nknots = 10, conditions = as.factor(sce$treatment))
-  save(sce, sce_trad, file = "sce_GAMed.RData")
+              cellWeights = cellWeights, nknots = 8, conditions = as.factor(sce$treatment))
+  save(sce, sce_trad, file = "sce_GAMed_8k.RData")
 } 
 
 

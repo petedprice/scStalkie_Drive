@@ -72,9 +72,14 @@ new_name_func <- function(gene){
     grep(gene, gsub("_", "-", markers$Teleopsis.dalmanni.Ortholog ))], 
     collapse = ", ")
   nn2 <- paste0(nn , " (", gene, ")")
+  return(nn)
 }
 
 new_names <- sapply(mk_genes, new_name_func)
+rm <- c("PB.4544", "PB.4546", "gene−9679", "STRG.14307", "g9515")
+all_figure_markers <- new_names[!names(new_names) %in% rm]
+all_figure_markers <- all_figure_markers[-which(duplicated(all_figure_markers))]
+
 
 dps_all <- DotPlot(seurat_integrated, features = mk_genes, assay = "RNA")+coord_flip() + 
   scale_x_discrete(labels = new_names)
@@ -124,6 +129,8 @@ keep <- SR_keep | ST_keep
 #################### FINAL ASSIGNMENT -------------------------
 seurat_integrated@meta.data$celltype <- "Keep"
 
+
+
 #Limited marker expression, unknown celltypes
 no_cell_cycle_marker_unknown_cells_0.75 <- c(1,7,15,23)
 seurat_integrated@meta.data$celltype[seurat_integrated@meta.data$integrated_snn_res.0.75 %in%
@@ -133,7 +140,82 @@ low_rep <- names(which(keep == F)) %>% as.numeric()
 seurat_integrated@meta.data$celltype[seurat_integrated@meta.data$integrated_snn_res.0.75 %in% 
                                        low_rep] <- "Low representation"
 
-DimPlot(seurat_integrated, group.by = 'celltype')
+seurat_integrated$celltype2 <- "Unknown"
+clusters_nos <- seurat_integrated$integrated_snn_res.0.75 %>% unique() %>% 
+  .[order(.)]
+cluster_names <- c("GSC/spermatogonia", "Unknown 1", "Unknown 3", "Early cyst", "Primary spermatocytes","Late cyst", 
+                   "Late spermatids", "Unknown 4", "Late cyst", "Early cyst", "Late spermatids", 
+           "Early cyst", "Late spermatids","Late cyst", "Secondary spermatocytes", "Unknown 2", 
+           "Early spermatids", "Early spermatids", "Early spermatids", "Early cyst", "Muscle", 
+           "Unknown 5", "Late spermatids", "Unknown 2")
+
+names(cluster_names) <- clusters_nos
+
+seurat_integrated@meta.data$celltype2 <- cluster_names[seurat_integrated$integrated_snn_res.0.75] %>% c()
+
+
+UMAP <- DimPlot(seurat_integrated, group.by = 'celltype2', label = T, split.by = 'treatment')
+
+
+cbPalette <- c("black", "grey30", "grey50", "grey70", "grey90", 
+               "#E69F00", "#56B4E9", "#009E73", "yellow3", 
+               "#0072B2", "#D55E00", "#CC79A7", 'darkblue')
+
+
+UMAP_final <- UMAP[[1]]$data %>% 
+  mutate(treatment = factor(treatment, levels = c("ST", "SR"))) %>% 
+  mutate(celltype2 = factor(celltype2, levels = c("Unknown 1", "Unknown 2", "Unknown 3", "Unknown 4", "Unknown 5", 
+                                                  "Muscle", "Early cyst", 
+                                                "Late cyst", "GSC/spermatogonia", 
+                                                "Primary spermatocytes", "Secondary spermatocytes", 
+                                                "Early spermatids", "Late spermatids"))) %>% 
+  ggplot(aes(x = umap_1, y = umap_2, colour = celltype2)) + 
+  facet_wrap(~treatment) +
+  geom_point(stroke = NA, size = .7) + 
+  guides(colour = guide_legend(override.aes = list(size=3), title = "Cluster")) + 
+  theme_classic() + labs(x = "UMAP 1", y = "UMAP 2", legend = 'Cluster') +
+  theme(legend.position = 'none', legend.box = "vertical", 
+        axis.text.x = element_text(color="black"), 
+        axis.ticks = element_line(color = "black")) + 
+  scale_color_manual(values= cbPalette) +
+  shadowtext::geom_shadowtext(data = UMAP[[1]]$layers[[2]]$data %>% 
+                                mutate(treatment = factor(treatment, levels = c("ST", "SR"))), aes(label = celltype2), colour = 'black', 
+                              size = 4, nudge_y = -0.5, nudge_x = 0, 
+                              bg.color = 'white', bg.r = 0.1, bg.size = 0.5, 
+                              fontface = "bold") + 
+  geom_point(data = UMAP[[1]]$layers[[2]]$data %>% 
+               mutate(treatment = factor(treatment, levels = c("ST", "SR"))), aes(x = umap_1, y = umap_2+0.1), colour = 'black',
+             stroke = 1, size = 2, shape = 21, fill = 'white') + 
+  theme( strip.background = element_blank() )
+
+
+
+features <- seurat_integrated@meta.data %>% 
+  mutate(treatment = factor(treatment, levels = c("ST", "SR"))) %>% 
+  mutate(celltype2 = factor(celltype2, levels = c("Unknown 1", "Unknown 2", "Unknown 3", "Unknown 4", "Unknown 5", 
+                                                  "Muscle", "Early cyst", 
+                                                  "Late cyst", "GSC/spermatogonia", 
+                                                  "Primary spermatocytes", "Secondary spermatocytes", 
+                                                  "Early spermatids", "Late spermatids"))) %>%
+  ggplot(aes(x = celltype2, y = nFeature_RNA, fill = celltype2)) + 
+  geom_boxplot() + theme_classic() +  theme(legend.position = 'none') + 
+  labs(x = "", y = "N\u00b0 expressed genes") + 
+  scale_fill_manual(values= cbPalette) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1, color="black"), 
+        axis.ticks = element_line(color = "black")) + 
+  facet_wrap(~treatment) + 
+  theme( strip.background = element_blank() )
+
+
+
+SA <- ggplotGrob(UMAP_final)
+SB <- ggplotGrob(features)
+
+##
+FigS4<- plot_grid(SA, SB, align = 'v', axis = 'l', nrow = 2, labels = c("(a)", "(b)"), rel_heights = c(3,2))
+ggsave("plots/S4.pdf", FigS4, height = 12, width =11)
+system("open plots/S4.pdf")
+
 
 seurat_integrated_ss <- subset(seurat_integrated, (celltype %in% c("Keep")))
 

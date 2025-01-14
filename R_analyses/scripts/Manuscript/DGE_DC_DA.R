@@ -174,7 +174,7 @@ dif_exp_data_table <-  dif_exp_data %>%
   summarise(count = n()) %>% 
   reshape2::dcast(celltype + chr ~ Significant, value.var = "count") %>% 
   rename(`Cell type` = celltype, Chromosome = chr) %>% 
-  .[c(3,4,7,8,5,6,1,2,9:14),]
+ .[c(11,12,1,2,7,8,5,6,13,14,15,16,3,4,9,10),]
 
 dif_exp_data_table[is.na(dif_exp_data_table)] <- 0
 
@@ -184,7 +184,6 @@ dif_exp_data_table[is.na(dif_exp_data_table)] <- 0
 #glm of DGE data #
 model1 <- dif_exp_data %>% 
   mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
-  #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
@@ -193,16 +192,14 @@ model1 <- dif_exp_data %>%
 
 model2 <- dif_exp_data %>% 
   mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
-  #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
                                                 "Early spermatids", "Late spermatids"))) %>%
-  glm(Significant ~1 +celltype, family = binomial, data = .)
+  glm(Significant ~celltype, family = binomial, data = .)
 
-model3 <- dif_exp_data%>% 
+model3 <- dif_exp_data %>% 
   mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
-  #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
@@ -211,22 +208,23 @@ model3 <- dif_exp_data%>%
 
 
 model4 <- dif_exp_data %>% 
- mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
-  #mutate(chr = ifelse(chr %in% c("Chr_1", "Chr_2"), "Autosome", "X")) %>% 
+  mutate(Significant = ifelse(Significant == "Unbiased", 0, 1)) %>% 
   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst",
                                                 "Late cyst", "GSC/Spermatogonia", 
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
                                                 "Early spermatids", "Late spermatids"))) %>%
-  glm(Significant ~(chr * celltype), family = binomial, data = .)
+  glm(Significant ~(chr * celltype) , family = binomial, data = .)
+
+summary(model4)
 
 anova(model1, model3, test = "Chisq")
 anova(model2, model3, test = "Chisq")
 anova(model2, model3, test = "Chisq")
 anova(model3, model4, test = "Chisq")
 
-#Model 3 is best fit 
-summary(model3)$coefficients %>% 
-  write.table("data/DEG_model3_coefficients.tsv", sep = "\t", quote = F, row.names = T)
+#Model 4 is best fit 
+summary(model4)$coefficients %>% 
+  write.table("data/DEG_model4_coefficients.tsv", sep = "\t", quote = F, row.names = T)
 
 tmp <- dif_exp_data %>% 
   #filter(Significant != "Unbiased") %>%
@@ -254,7 +252,7 @@ make_df_func <- function(tmp, celltype){
 
 sig_dif_exp1 <- lapply(names(celltypes), make_df_func, tmp = tmp) %>% 
   purrr::reduce(full_join, by = c("Gene", "chr", "Drosophila ortholog"))
-sig_dif_exp1[is.na(sig_dif_exp1)] <- "Low Exp"
+sig_dif_exp1[is.na(sig_dif_exp1)] <- "No expression"
 keep <- which(rowSums(sig_dif_exp1 == "SR-biased" | sig_dif_exp1 == "ST-biased") > 0)
 sig_dif_exp1 <- sig_dif_exp1[keep,]
 
@@ -263,10 +261,7 @@ write.table(sig_dif_exp1, "data/DEG_full_table.tsv", sep = "\t", quote = F, row.
 
 
 dif_exp_data_table %>% 
-  .[c(3,4,7,8,5,6,1,2,9:14),] %>% 
   write.table(., "data/DEG_table.tsv", sep = "\t", quote = F, row.names = F)
-
-
 
 
 
