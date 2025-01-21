@@ -35,10 +35,10 @@ celltype_table <- read.table("data/celltype_table.txt", header = T)
 
 seurat_final <- subset(seurat_final, celltype != "Muscle")
 
-germ <- c("GSC/Spermatogonia", "Primary spermatocytes", "Secondary spermatocytes", "Spermatids")
+germ <- c("GSC/Spermatogonia", "Primary spermatocytes", "Secondary spermatocytes", "Early spermatids", "Late spermatids")
 cyst <- c("Early cyst", "Late cyst")
-early_germ <- c("GSC/Spermatogonia", "Primary spermatocytes")
-late_germ <- c("Secondary spermatocytes", "Spermatids")
+early_germ <- c("GSC/Spermatogonia", "Primary spermatocytes", "Secondary spermatocytes")
+late_germ <- c("Late spermatids", "Early spermatids")
 
 seurat_final@meta.data %>% 
   mutate(treatment = factor(treatment, levels = c("ST", "SR"))) %>%

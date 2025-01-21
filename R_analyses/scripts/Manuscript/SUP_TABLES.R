@@ -23,6 +23,7 @@ rm(list = ls())
 load("data/RData/seurat_final.RData")
 DefaultAssay(seurat_final) <- "RNA"
 Idents(seurat_final) <- "celltype"
+seurat_final <- JoinLayers(seurat_final)
 ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
@@ -38,7 +39,7 @@ markers %>%
   mutate(cluster = factor(cluster, levels = c("Muscle", "Early cyst",
                                               "Late cyst", "GSC/Spermatogonia", 
                                               "Primary spermatocytes", "Secondary spermatocytes", 
-                                              "Spermatids"))) %>%
+                                              "Early spermatids", "Late spermatids"))) %>%
   group_by(cluster) %>% 
   top_n(., 20, -p_val_adj) %>% 
   merge(unique(ortholog_table[,c("REF_GENE_NAME", "consensus_gene")]), by.x = 'gene', by.y = 'REF_GENE_NAME') %>% 

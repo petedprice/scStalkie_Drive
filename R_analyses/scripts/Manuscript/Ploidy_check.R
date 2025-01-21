@@ -8,7 +8,7 @@ rm(list = ls())
 load("data/RData/seurat_final.RData")
 samples <- c("sr1", "sr2", "sr3", "sr5", "st1","st2","st3","st5")
 
-run_checks = "no"
+run_checks = "yes"
 if (run_checks == "yes"){
   
   metadata <- seurat_final@meta.data
@@ -20,11 +20,11 @@ if (run_checks == "yes"){
   #samp = samples[1]
   for (samp in samples){  
     print(samp)
-    snps <- read.table(paste0("data/scAlleleCount/relaxed/", samp, "_snps.txt"))
+    snps <- read.table(paste0("data/scAlleleCount/relaxed/data/", samp, "_filt.recode.bed"))
     snps$snp_indx <- 1:nrow(snps)
     colnames(snps) <- c("Chr", "Pos", "Ref", "Alt", "snp_indx")
     barcodes <- read.table(paste0("data/scAlleleCount/relaxed///data/", samp, "_barcodes.tsv"))[,1]
-    cov <- readMM(file = paste0("data/scAlleleCount/relaxed//data/", samp, "covmat.mtx"))
+    cov <- readMM(file = paste0("data/scAlleleCount/relaxed///data/", samp, "covmat.mtx"))
     alt <- readMM(file = paste0("data/scAlleleCount/relaxed//data/", samp, "altmat.mtx"))
     ref <- readMM(file = paste0("data/scAlleleCount/relaxed//data/", samp, "refmat.mtx"))
     
@@ -102,9 +102,10 @@ if (run_checks == "yes"){
 }
 
 
+
 new_meta_data$celltype <- factor(new_meta_data$celltype, levels = 
                                    c("Muscle", "Early cyst", "Late cyst", "GSC/Spermatogonia", 
-                                     "Primary spermatocytes", "Secondary spermatocytes", "Spermatids"))
+                                     "Primary spermatocytes", "Secondary spermatocytes", "Early spermatids", "Late spermatids"))
 ###########################
 
 p1 <- 
@@ -126,7 +127,7 @@ p1 <-
   labs(y = "% of homozygous sites per cell", x = "Mean per-cell SNP coverage") + 
   theme_classic() +  
   theme(legend.position = c(0.8,0.8))
-p1
+
 p2 <- new_meta_data %>% 
   filter(treatment == "ST") %>% 
   filter(snp_threshold ==0 & het_threshold ==1 & hom_threshold == 1) %>% 
@@ -193,8 +194,8 @@ ac <- plot_grid(ab[[1]],cd[[1]], labels = c("(a)", "(c)"), align = 'v',
                 axis = 'r', ncol = 1, label_x = -0.03, rel_heights = c(4,5))
 Ploidy_Sup <- plot_grid(ac, bd, rel_widths = c(4,4))
 
-ggsave("plots/Ploidy_Sup.pdf", Ploidy_Sup, width = 8, height = 9)
-system("open plots/Ploidy_Sup.pdf")
+ggsave("plots/Ploidy_Sup.svg", Ploidy_Sup, width = 8, height = 9)
+system("open plots/Ploidy_Sup.svg")
 
 ############################
 new_meta_data %>% 
