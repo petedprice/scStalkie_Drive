@@ -7,7 +7,7 @@ process cellranger_count {
 
     tag {'Cellranger_count_' + '_' + species + '_' + sample }
 
-    //publishDir 'cellranger_out', mode: 'copy', overwrite: true, pattern: '*crdata'
+    publishDir 'cellranger_out', mode: 'copy', overwrite: true, pattern: '*crdata'
 
     input:
     tuple val(species), file("${species}_cellranger_reference"), val(sample)

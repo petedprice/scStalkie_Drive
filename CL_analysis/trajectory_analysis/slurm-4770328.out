@@ -1,0 +1,181 @@
+slurm-4770324.out
+slurm-4770328.out
+tradeseq.slurm
+edgeR
+fortunes
+hattyoriiiiiii-rstudio-seurat_5.1.0-1.0.img
+icMat.RData
+index.html
+k_evaluation.pdf
+matrixStats
+matrixStats_1.4.1.tar.gz
+princurve
+Rplots.pdf
+sce_GAMed.RData
+send
+seurat_5.0.0.sif
+seurat_final.RData
+seurat_latest.sif
+slingshot
+tradeSeq
+TrajectoryUtils
+Loading required package: SeuratObject
+Loading required package: sp
+
+Attaching package: ‘SeuratObject’
+
+The following object is masked from ‘package:base’:
+
+    intersect
+
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Loading required package: SingleCellExperiment
+Loading required package: SummarizedExperiment
+Loading required package: MatrixGenerics
+Loading required package: matrixStats
+
+Attaching package: ‘matrixStats’
+
+The following object is masked from ‘package:dplyr’:
+
+    count
+
+
+Attaching package: ‘MatrixGenerics’
+
+The following objects are masked from ‘package:matrixStats’:
+
+    colAlls, colAnyNAs, colAnys, colAvgsPerRowSet, colCollapse,
+    colCounts, colCummaxs, colCummins, colCumprods, colCumsums,
+    colDiffs, colIQRDiffs, colIQRs, colLogSumExps, colMadDiffs,
+    colMads, colMaxs, colMeans2, colMedians, colMins, colOrderStats,
+    colProds, colQuantiles, colRanges, colRanks, colSdDiffs, colSds,
+    colSums2, colTabulates, colVarDiffs, colVars, colWeightedMads,
+    colWeightedMeans, colWeightedMedians, colWeightedSds,
+    colWeightedVars, rowAlls, rowAnyNAs, rowAnys, rowAvgsPerColSet,
+    rowCollapse, rowCounts, rowCummaxs, rowCummins, rowCumprods,
+    rowCumsums, rowDiffs, rowIQRDiffs, rowIQRs, rowLogSumExps,
+    rowMadDiffs, rowMads, rowMaxs, rowMeans2, rowMedians, rowMins,
+    rowOrderStats, rowProds, rowQuantiles, rowRanges, rowRanks,
+    rowSdDiffs, rowSds, rowSums2, rowTabulates, rowVarDiffs, rowVars,
+    rowWeightedMads, rowWeightedMeans, rowWeightedMedians,
+    rowWeightedSds, rowWeightedVars
+
+Loading required package: GenomicRanges
+Loading required package: stats4
+Loading required package: BiocGenerics
+
+Attaching package: ‘BiocGenerics’
+
+The following objects are masked from ‘package:dplyr’:
+
+    combine, intersect, setdiff, union
+
+The following object is masked from ‘package:SeuratObject’:
+
+    intersect
+
+The following objects are masked from ‘package:stats’:
+
+    IQR, mad, sd, var, xtabs
+
+The following objects are masked from ‘package:base’:
+
+    anyDuplicated, aperm, append, as.data.frame, basename, cbind,
+    colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
+    get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,
+    match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
+    Position, rank, rbind, Reduce, rownames, sapply, setdiff, sort,
+    table, tapply, union, unique, unsplit, which.max, which.min
+
+Loading required package: S4Vectors
+
+Attaching package: ‘S4Vectors’
+
+The following objects are masked from ‘package:dplyr’:
+
+    first, rename
+
+The following objects are masked from ‘package:base’:
+
+    expand.grid, I, unname
+
+Loading required package: IRanges
+
+Attaching package: ‘IRanges’
+
+The following objects are masked from ‘package:dplyr’:
+
+    collapse, desc, slice
+
+The following object is masked from ‘package:sp’:
+
+    %over%
+
+Loading required package: GenomeInfoDb
+Loading required package: Biobase
+Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with
+    'browseVignettes()'. To cite Bioconductor, see
+    'citation("Biobase")', and for packages 'citation("pkgname")'.
+
+
+Attaching package: ‘Biobase’
+
+The following object is masked from ‘package:MatrixGenerics’:
+
+    rowMedians
+
+The following objects are masked from ‘package:matrixStats’:
+
+    anyMissing, rowMedians
+
+
+Attaching package: ‘SummarizedExperiment’
+
+The following object is masked from ‘package:Seurat’:
+
+    Assays
+
+The following object is masked from ‘package:SeuratObject’:
+
+    Assays
+
+Warning message:
+Layer ‘scale.data’ is empty 
+Warning messages:
+1: useNames = NA is deprecated. Instead, specify either useNames = TRUE or useNames = TRUE. 
+2: useNames = NA is deprecated. Instead, specify either useNames = TRUE or useNames = TRUE. 
+3: useNames = NA is deprecated. Instead, specify either useNames = TRUE or useNames = TRUE. 
+4: useNames = NA is deprecated. Instead, specify either useNames = TRUE or useNames = TRUE. 
+5: useNames = NA is deprecated. Instead, specify either useNames = TRUE or useNames = TRUE. 
+[1] "evaluating K"
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.
+Fitting lineages with multiple conditions. This method has been tested on a couple of datasets, but is still in an experimental phase.

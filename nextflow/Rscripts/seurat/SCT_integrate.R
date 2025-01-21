@@ -12,6 +12,8 @@ library(parallel)
 
 ###### SETTING UP INPUT COMMANDS ----
 args = commandArgs(trailingOnly=TRUE)
+cellcycle <- read.csv(args[2])
+
 output_path <- args[1]
 #make folders
 outdatapath = paste(output_path, "/outdata", sep = "")
@@ -25,13 +27,15 @@ split_seurat <-list()
 for (sobj in seurat_objs){
 	load(sobj)
 	print("SCT transform")
-        
+        doublet_seurat <- NormalizeData(doublet_seurat)
+	doublet_seurat <- CellCycleScoring(doublet_seurat, 
+                                    g2m.features = cellcycle$gene[cellcycle$phase == "G2/M"], 
+                                    s.features = cellcycle$gene[cellcycle$phase == "S"])
+
 	doublet_seurat <- SCTransform(doublet_seurat, vars.to.regress =
                                 c("nUMI","mitoRatio"))
-#	doublet_seurat <- SCTransform(doublet_seurat, vars.to.regress =
-#                                c("mitoRatio","nUMI","S.Score","G2M.Score"))
 	split_seurat[[doublet_seurat$sample[1]]] <-doublet_seurat
-	
+
 }
 
 
@@ -78,9 +82,6 @@ ggsave(filename = paste(plotpath, "fs_Phase_PCA.pdf", sep = ""))
 gc()
 #Integrate data 
 print("integrating")
-#seurat_integrated <- IntegrateData(anchorset = anchors, 
-#                                   normalization.method = "SCT", 
-#                                   features.to.integrate = unique(unlist(lapply(split_seurat, rownames))))
 seurat_integrated <- IntegrateData(anchorset = anchors,
                                    normalization.method = "SCT")
 
