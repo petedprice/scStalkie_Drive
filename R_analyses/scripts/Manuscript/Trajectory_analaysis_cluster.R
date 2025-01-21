@@ -21,13 +21,6 @@ Idents(seurat_final) <- seurat_final$celltype
 keep_clusters <- c("GSC/Spermatogonia", "Primary spermatocytes", "Spermatocytes", "Secondary spermatocytes", "Early spermatids", "Late spermatids", "Spermatids")
 keep_clusters <- keep_clusters[keep_clusters %in% unique(seurat_final$celltype)]
 
-# 
-# rm_cells = c("sr5_GAGGGTACACCTAAAC-1", "sr5_GATAGAAAGCCTATCA-1",
-# "st1_AAGTTCGGTATTGGCT-1", "sr5_AAGCATCTCGTGGCTG-1", "sr5_ACGTAGTAGTCAACAA-1", "sr5_CAAGGGATCTATTGTC-1", 
-# "sr5_GACCCTTAGTGTCATC-1", "sr5_GACCGTGCATTGCTTT-1", "sr5_GATTCTTCACCAAATC-1", 
-# "sr5_GCATCTCGTACACTCA-1", "sr5_GGACGTCGTAGGAGGG-1", "sr5_TAAGTCGAGACATAAC-1",
-# "sr5_TCCAGAAAGGCAGGTT-1", "sr5_TCGCACTCACGCCACA-1", "sr5_TGTTGGACACAGACGA-1", "sr5_TTCGATTCAAAGGGTC-1")
-
 sce <- seurat_final %>% 
   subset(., idents = keep_clusters) %>% 
   as.SingleCellExperiment(., assay = 'RNA')
