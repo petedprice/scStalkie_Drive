@@ -7,7 +7,7 @@ process seurat_doublet {
     
     label 'seurat'
 
-    //publishDir 'mut_compiled', mode: 'copy', overwrite: true, pattern: '*snp_summarise.txt.gz'
+    publishDir 'seurat_objects', mode: 'copy', overwrite: true, pattern: '*doublet_seurat.RData'
 
     input: 
     tuple val(sample), file("filtered_seurat.RData"), file("${sample}_initial_QC_plots"), val(nfs), val(mtr), val(gu)    
@@ -16,9 +16,11 @@ process seurat_doublet {
     tuple file("doublet_seurat.RData"), val(nfs), val(mtr), val(gu)
 
     script:
-    """
-    
+    """    
     #!/bin/bash
+
+
+
     Rscript ${projectDir}/Rscripts/seurat/doublet_finder.R \
 	filtered_seurat.RData \
 	. \
@@ -28,7 +30,6 @@ process seurat_doublet {
 	${projectDir}
  	
     mv outdata/doublet_seurat.RData .
-    
     """
 
 }

@@ -10,8 +10,7 @@ nextflow run /users/bop20pp/personal_git/scStalkie_Drive/nextflow/main.nf \
 	--cellcycle_markers /users/bop20pp/personal_git/scStalkie_Drive/nextflow/data/cell_cycle_markers.csv \
 	--celltype_markers /users/bop20pp/personal_git/scStalkie_Drive/nextflow/data/markers_elife_plus_extras.csv \
 	--mt_genes /users/bop20pp/personal_git/scStalkie_Drive/nextflow/data/mt_genes.txt \
-	-resume \
-	-with-trace
+	-resume
 
 
 

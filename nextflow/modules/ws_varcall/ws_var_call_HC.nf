@@ -13,12 +13,12 @@ process ws_var_call_HC {
     tuple val(species), val(sample), file(bam), val(ref)
 
     output:
-    tuple val(species), val(sample), file(bam), file("${sample}.g.vcf.gz"), val(ref)
+    tuple val(species), val(sample), file(bam), file("${sample}.vcf.gz"), val(ref)
 
     script:
     """
     #!/bin/bash
-    gatk --java-options "-Xmx4g" HaplotypeCaller -R ${params.fasta_dir}/${ref}.fna -I $bam -O ${sample}.g.vcf.gz -ERC GVCF
+    gatk --java-options "-Xmx4g" HaplotypeCaller -R ${params.fasta_dir}/${ref}.fna -I $bam -O ${sample}.vcf.gz
     """
 }
 

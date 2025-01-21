@@ -21,7 +21,8 @@ process seurat_SCT_integrate {
     #!/bin/bash
     echo ${task.memory}
     Rscript ${projectDir}/Rscripts/seurat/SCT_integrate.R \
-	.
+	. \
+	${params.cellcycle_markers}
 
  	
     mv outdata/integrated_seurat.RData integrated_seurat_nf${nfs}_mtr${mtr}_gu${gu}.RData

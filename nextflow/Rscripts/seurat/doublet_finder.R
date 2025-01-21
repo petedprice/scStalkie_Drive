@@ -47,17 +47,15 @@ dir.create(plotpath, showWarnings = F, recursive = T)
 
 #Cell cycle scoring 
 filtered_seurat <- NormalizeData(filtered_seurat)
-filtered_seurat <- CellCycleScoring(filtered_seurat, 
-                                    g2m.features = cellcycle$gene[cellcycle$phase == "G2/M"], 
-                                    s.features = cellcycle$gene[cellcycle$phase == "S"])
 
 if (doublet_finder == TRUE){
   ##### DoubletFinder ----- 
   cat("You chose to remove doublets so removing them for you!\n \
       To keep doublets use command -z FALSE when running this script")
-  nExp <- round(ncol(filtered_seurat)*0.025) 
-  filtered_seurat <-SCTransform(filtered_seurat, vars.to.regress =
-			c("mitoRatio","nUMI"))
+  nExp <- round(ncol(filtered_seurat)*0.08)
+  filtered_seurat$df_threshold <-0.08
+  filtered_seurat <-SCTransform(filtered_seurat)
+
   print("SCT trnasformed")
   filtered_seurat <-RunPCA(filtered_seurat)
   filtered_seurat <-RunUMAP(filtered_seurat, dims = 1:40,reduction = "pca")

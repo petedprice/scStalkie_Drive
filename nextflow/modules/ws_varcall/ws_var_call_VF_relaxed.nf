@@ -9,7 +9,7 @@ process ws_var_call_VF_relaxed {
     publishDir 'filtered_vcfs_relaxed', mode: 'copy', overwrite: true, pattern: '*recode.vcf'
 
     input:
-    tuple val(species), val(sample), file("${sample}_dup_NCR.bam"), file("${sample}.g.vcf.gz"), val(ref)
+    tuple val(species), val(sample), file("${sample}_dup_NCR.bam"), file("${sample}.vcf.gz"), val(ref)
 
     output:
     tuple val(species), val(sample), file("${sample}_dup_NCR.bam"), file("${sample}_filt.recode.vcf"), val(ref)
@@ -18,15 +18,16 @@ process ws_var_call_VF_relaxed {
     """
     #!/bin/bash
 
-    #gatk IndexFeatureFile -F ${sample}.g.vcf.gz
+    #gatk IndexFeatureFile -F ${sample}.vcf.gz
 
     vcftools \
-	--gzvcf ${sample}.g.vcf.gz \
+	--gzvcf ${sample}.vcf.gz \
 	--out ${sample}_filt \
 	--minGQ 20 \
 	--minDP 4 \
 	--minQ 30 \
 	--recode \
+	--remove-indels \
 	--recode-INFO-all
 
 
