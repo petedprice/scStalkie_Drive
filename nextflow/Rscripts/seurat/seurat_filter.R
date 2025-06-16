@@ -5,7 +5,7 @@ library(tidyr)
 library(Matrix)
 library(scales)
 library(cowplot)
-library(RCurl)
+#library(RCurl)
 library(stringr)
 library(ggplot2)
 
@@ -30,18 +30,29 @@ print(metadata_nf)
 
 source(paste(path_to_pd, "/Rscripts/seurat/Usefull_functions.R", sep = ""))
 
+
+
 #filtering thresholds 
 filt = "filtered"
 ftr = nfs
 
+print(nfs)
+
 #READING IN COUNT MATRICES and creating sample variables. 
 seurat_data <- Read10X(data.dir = datapath)
 
+
+
+
+print(seurat_data)
+
+print("creating object")
 seurat_obj <- CreateSeuratObject(counts = seurat_data, 
                                    min.features = ftr, ### FILTERING CELLS WITH LESS THAN 200 GENES
                                    project = metadata_nf$sample, 
                                    min.cells = 3)
  
+print("object created")
 seurat_obj <- RenameCells(seurat_obj, add.cell.id = metadata_nf$sample)
 seurat_obj@meta.data$sample <- metadata_nf$sample
 merged_seurat = seurat_obj

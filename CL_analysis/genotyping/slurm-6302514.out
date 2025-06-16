@@ -1,0 +1,9 @@
+
+
+Error: Unknown option:  
+
+/var/spool/slurmd.spool/job6302514/slurm_script: line 10: --max-missing: command not found
+/var/spool/slurmd.spool/job6302514/slurm_script: line 11: --minQ: command not found
+/var/spool/slurmd.spool/job6302514/slurm_script: line 12: --hwe: command not found
+/var/spool/slurmd.spool/job6302514/slurm_script: line 13: --remove-indels: command not found
+/var/spool/slurmd.spool/job6302514/slurm_script: line 14: --recode: command not found

@@ -1,0 +1,7 @@
+
+Reading data from <STDIN> for featureCounts ...
+
+
+ERROR: no valid SAM or BAM file is received from <STDIN>
+
+/var/spool/slurmd.spool/job6960592/slurm_script: line 20: --primary: command not found

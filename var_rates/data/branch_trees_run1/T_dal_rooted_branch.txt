@@ -1,0 +1,1 @@
+(((Teleopsis_dalmanni#1,Bactrocera_oleae)#1,Drosophila_melanogaster),Episyrphus_balteatus);

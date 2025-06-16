@@ -1,0 +1,6 @@
+name: scipy_numpy
+channels:
+  - anaconda
+dependencies:
+  - scipy
+  - numpy

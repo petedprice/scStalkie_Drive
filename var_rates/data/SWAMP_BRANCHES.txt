@@ -1,0 +1,5 @@
+5..6    P_col,N_mel
+6..1    P_col
+6..2    N_mel
+5..3    A_pla
+5..4    T_gut

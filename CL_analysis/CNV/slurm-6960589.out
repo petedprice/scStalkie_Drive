@@ -1,0 +1,3 @@
+/var/spool/slurmd.spool/job6960589/slurm_script: line 6: conda: command not found
+/var/spool/slurmd.spool/job6960589/slurm_script: line 11: featureCounts: command not found
+/var/spool/slurmd.spool/job6960589/slurm_script: line 18: --primary: command not found

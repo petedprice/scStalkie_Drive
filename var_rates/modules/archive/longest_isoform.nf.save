@@ -1,0 +1,30 @@
+process longest_isoform {
+    cpus = 1
+    memory = '4 GB'
+    time = '4h'
+
+    //label 'agat'
+    //label 'orthofinder'
+    label 'seqtk'
+
+
+    input:
+    tuple val(species), file("${species}.gff"), file("${species}.protein.faa"), file("${species}.cds.fna")
+    output:
+    file("${species}.protein_longest.faa")
+
+    script:
+    """
+    #!/bin/bash
+    echo $species
+    python --version
+    python ${baseDir}/git/OrthoFinder/tools/primary_transcript.py ${species}.protein.faa
+    mv primary_transcripts/${species}.protein.faa ${species}.protein_longest.faa
+
+    cat ${species}.protein_longest.faa | grep '>' | cut -f -d " " | cut -c 2- > longest_proteins.txt
+    
+
+
+
+    """
+}

@@ -1,0 +1,5 @@
+name: prank
+channels:
+  - bioconda
+dependencies:
+  - prank

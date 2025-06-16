@@ -1,0 +1,3 @@
+Note: none of --samples-file, --ploidy or --ploidy-file given, assuming all sites are diploid
+[mpileup] 8 samples in 8 input files
+slurmstepd: error: *** JOB 6302352 ON node137 CANCELLED AT 2025-04-23T16:37:36 ***
