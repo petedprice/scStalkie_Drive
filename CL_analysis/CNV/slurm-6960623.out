@@ -1,0 +1,53 @@
+
+        ==========     _____ _    _ ____  _____  ______          _____  
+        =====         / ____| |  | |  _ \|  __ \|  ____|   /\   |  __ \ 
+          =====      | (___ | |  | | |_) | |__) | |__     /  \  | |  | |
+            ====      \___ \| |  | |  _ <|  _  /|  __|   / /\ \ | |  | |
+              ====    ____) | |__| | |_) | | \ \| |____ / ____ \| |__| |
+        ==========   |_____/ \____/|____/|_|  \_\______/_/    \_\_____/
+	  v2.0.1
+
+//========================== featureCounts setting ===========================\\
+||                                                                            ||
+||             Input files : 1 BAM file                                       ||
+||                           o Sample_19.sorted.dedup.bam                     ||
+||                                                                            ||
+||             Output file : check3_Sample_19_gene_counts.txt                 ||
+||                 Summary : check3_Sample_19_gene_counts.txt.summary         ||
+||              Annotation : Teleopsis_dalmanni.gff (GTF)                     ||
+||      Dir for temp files : feature_counts                                   ||
+||                                                                            ||
+||                 Threads : 8                                                ||
+||                   Level : meta-feature level                               ||
+||              Paired-end : yes                                              ||
+||      Multimapping reads : not counted                                      ||
+||     Multiple alignments : primary alignment only                           ||
+|| Multi-overlapping reads : not counted                                      ||
+||   Min overlapping bases : 1                                                ||
+||                                                                            ||
+||          Chimeric reads : not counted                                      ||
+||        Both ends mapped : required                                         ||
+||                                                                            ||
+\\============================================================================//
+
+//================================= Running ==================================\\
+||                                                                            ||
+|| Load annotation file Teleopsis_dalmanni.gff ...                            ||
+||    Features : 13354                                                        ||
+||    Meta-features : 13354                                                   ||
+||    Chromosomes/contigs : 3                                                 ||
+||                                                                            ||
+|| Process BAM file Sample_19.sorted.dedup.bam...                             ||
+||    Paired-end reads are included.                                          ||
+||    Total alignments : 14219906                                             ||
+||    Successfully assigned alignments : 4038316 (28.4%)                      ||
+||    Running time : 0.59 minutes                                             ||
+||                                                                            ||
+|| Write the final count table.                                               ||
+|| Write the read assignment summary.                                         ||
+||                                                                            ||
+|| Summary of counting results can be found in file "feature_counts/check3_S  ||
+|| ample_19_gene_counts.txt.summary"                                          ||
+||                                                                            ||
+\\============================================================================//
+

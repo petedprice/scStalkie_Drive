@@ -21,5 +21,6 @@ process cellranger_mkref {
 	--fasta=${params.fasta_dir}/${ref}.fna \
         --genes=cr_${ref}.gtf
 
+
     """
 }

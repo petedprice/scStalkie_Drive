@@ -1,0 +1,5 @@
+
+CondaError: Run 'conda init' before 'conda activate'
+
+/var/spool/slurmd.spool/job6960590/slurm_script: line 14: featureCounts: command not found
+/var/spool/slurmd.spool/job6960590/slurm_script: line 21: --primary: command not found

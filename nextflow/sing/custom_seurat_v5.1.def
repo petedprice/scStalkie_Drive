@@ -1,0 +1,51 @@
+Bootstrap: docker
+From: rocker/tidyverse:4.4
+
+%labels
+    Author Your Name
+    Version v1.0
+    Description "Singularity image with Seurat v5.1 and tidyverse based on R 4.4"
+
+%environment
+    export LC_ALL=C
+    export R_LIBS_USER=/usr/local/lib/R/site-library
+
+%post
+    # Install system dependencies
+    apt-get update && apt-get install -y --no-install-recommends \
+        libhdf5-dev \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        libxml2-dev \
+        libglpk-dev \
+        libgsl-dev \
+        libgeos-dev \
+        libudunits2-dev \
+        libproj-dev \
+        libfontconfig1-dev \
+        libharfbuzz-dev \
+        libfribidi-dev \
+        libfreetype6-dev \
+        libpng-dev \
+        libtiff5-dev \
+        libjpeg-dev \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Install Bioconductor dependencies
+    R --slave -e 'install.packages("BiocManager")'
+    R --slave -e 'BiocManager::install(c("limma", "SingleCellExperiment", "scuttle", "scran", "scater", "edgeR", "DESeq2", "glmGamPoi", "AnnotationDbi", "annotate", "GenomicRanges", "IRanges", "S4Vectors", "BiocGenerics", "Biobase"))'
+
+    # Install CRAN dependencies
+    R --slave -e 'install.packages(c("remotes", "devtools", "tidyverse", "patchwork", "ggrepel", "cowplot", "RColorBrewer", "viridis", "pheatmap", "igraph", "reticulate", "future", "future.apply", "Matrix", "spatstat", "RcppAnnoy", "RcppProgress", "RcppHNSW", "RSQLite", "progress", "lmtest", "metap", "pbapply", "ggridges", "fitdistrplus", "BiocManager"))'
+
+    # Install Seurat v5.1
+    R --slave -e 'remotes::install_version("Seurat", version = "5.1.0", repos = "https://cloud.r-project.org")'
+
+    # Install SeuratData package
+    R --slave -e 'remotes::install_github("satijalab/seurat-data")'
+
+    # Clean up
+    rm -rf /tmp/downloaded_packages/ /tmp/*.rds
+
+%runscript
+    exec R "$@"

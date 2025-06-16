@@ -1,0 +1,1 @@
+(((Teleopsis_dalmanni,Drive_tdal),(Bactrocera_oleae,Drosophila_melanogaster)),Episyrphus_balteatus);

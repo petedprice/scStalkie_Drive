@@ -1,0 +1,13 @@
+BootStrap: debootstrap
+From: ubuntu:20.04
+
+%post
+  apt-get update
+
+  # Install R, Python, misc. utilities
+  apt-get install -y libopenblas-dev r-base-core libcurl4-openssl-dev libopenmpi-dev openmpi-bin openmpi-common openmpi-doc openssh-client openssh-server libssh-dev wget vim git nano git cmake  gfortran g++ curl wget python autoconf bzip2 libtool libtool-bin python-pip python-dev
+  apt-get clean
+  locale-gen en_US.UTF-8
+
+  # Install required R packages
+  R --slave -e 'install.packages("devtools", repos="https://cloud.r-project.org/")'
