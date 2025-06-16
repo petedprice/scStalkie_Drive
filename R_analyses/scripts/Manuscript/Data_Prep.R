@@ -5,13 +5,16 @@ library(stringr)
 library(gridExtra)
 library(ggpubr)
 library(clustree)
+library(cowplot)
 rm(list = ls())
 
 load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_newref_Seurat5.1_df0.08.RData")
 seurat_integrated$treatment <- "SR"
 seurat_integrated$treatment[grep("st", seurat_integrated$sample)] <- "ST"
 DefaultAssay(seurat_integrated) <- "integrated"
-ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
+ortholog_table <- read.table("outdata/orthologs_April25.tsv", sep = '\t', header = T, 
+                             stringsAsFactors = F, quote = "", comment.char = "")
+
 ortholog_table$REF_GENE_NAME <- gsub("_", "-", ortholog_table$REF_GENE_NAME)
 
 
@@ -57,7 +60,7 @@ Idents(seurat_integrated) <- res
 
 ######### VISUALISING MARKER GENES ------
 DefaultAssay(seurat_integrated) <- "RNA"
-markers <- read.xlsx("data/MANUSCRIPT/Drive Manuscript Supplementary Tables.xlsx", sheet = 2)[1:30,c(1:6)] 
+markers <- read.xlsx("data/MANUSCRIPT/Drive Manuscript Supplementary Tables.xlsx", sheet = 2)[1:31,c(1:6)] 
 row_order <- c("E", "M", "CYSC", "EC", "LC", "C", "G", "G, PS", "PS, SS", "PS, SS, ST", "PS, ST", "ST", "LST")
 markers$Drosophila.cell.type <- factor(markers$Drosophila.cell.type, levels = row_order)
 markers <- markers[order(markers$Drosophila.cell.type),]
@@ -212,13 +215,13 @@ SA <- ggplotGrob(UMAP_final)
 SB <- ggplotGrob(features)
 
 ##
-FigS4<- plot_grid(SA, SB, align = 'v', axis = 'l', nrow = 2, labels = c("(a)", "(b)"), rel_heights = c(3,2))
-ggsave("plots/S4.pdf", FigS4, height = 12, width =11)
-system("open plots/S4.pdf")
+FigS13<- plot_grid(SA, SB, align = 'v', axis = 'l', nrow = 2, labels = c("(a)", "(b)"), rel_heights = c(3,2))
+ggsave("plots/manuscript_plots/S13.pdf", FigS13, height = 12, width =11)
+system("open plots/manuscript_plots/S13.pdf")
 
 
 seurat_integrated_ss <- subset(seurat_integrated, (celltype %in% c("Keep")))
-
+save(seurat_integrated, file = 'data/RData/seurat_unfiltered.RData')
 
 
 

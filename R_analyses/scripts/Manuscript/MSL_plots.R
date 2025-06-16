@@ -5,7 +5,9 @@ library(Seurat)
 load("data/RData/DEG_DC.RData")
 load("data/RData/seurat_final.RData")
 
-ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
+ortholog_table <- read.table("outdata/orthologs_April25.tsv", sep = '\t', header = T, 
+                             stringsAsFactors = F, quote = "", comment.char = "")
+
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
 ortholog_table$REF_GENE_NAME <- gsub("_", "-", ortholog_table$REF_GENE_NAME)
@@ -44,5 +46,5 @@ sup_msl <- DotPlot(seurat_final, features = MSL_df$REF_GENE_NAME,  assay = "RNA"
          size = guide_legend(title = '% of cells expressed'))
 
 
-ggsave("plots/S7_MSL_expression.pdf", sup_msl, width = 6, height = 4)
-system("open plots/S7_MSL_expression.pdf")
+ggsave("plots/manuscript_plots/S5.tiff", sup_msl, width = 6, height = 4)
+system("open plots/manuscript_plots/S5.tiff")

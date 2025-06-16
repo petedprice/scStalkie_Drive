@@ -27,7 +27,8 @@ load("data/RData/seurat_final.RData")
 seurat_final$treatment <- "SR"
 seurat_final$treatment[grep("st", seurat_final$sample)] <- "ST"
 DefaultAssay(seurat_final) <- "integrated"
-ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
+ortholog_table <- read.table("outdata/orthologs_April25.tsv", sep = '\t', header = T, 
+                             stringsAsFactors = F, quote = "", comment.char = "")
 
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
 celltype_table <- read.table("data/celltype_table.txt", header = T)

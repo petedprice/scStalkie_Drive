@@ -1,0 +1,8 @@
+consensus_gene Gene logFC_CNV FDR_CNV chr CNV_sig Expressed in DGE in
+1 CycK gene-7176 0.0882664675983923 0.980958344314113 Chr_2 UNBIAS_CNV Primary spermatocytes, Late cyst, GSC/Spermatogonia, Early cyst, Secondary spermatocytes No DGE
+2 JASPer STRG.3243 -3.57102806382377 2.10999627490553e-80 Chr_X SR Early spermatids, Secondary spermatocytes, Primary spermatocytes Primary spermatocytes
+3 Kpc2 gene-10008 Insufficient coverage Insufficient coverage Chr_X Insufficient coverage Late spermatids, Early spermatids, Secondary spermatocytes No DGE
+4 Mcm10 gene-9295 -0.920049297046773 2.28858125790948e-45 Chr_X SR Late spermatids, Early cyst, Primary spermatocytes, Early spermatids, GSC/Spermatogonia, Secondary spermatocytes Late spermatids, Primary spermatocytes
+5 Pbp95 gene-5014 0.0271145906946405 1 Chr_2 UNBIAS_CNV GSC/Spermatogonia, Secondary spermatocytes, Primary spermatocytes, Late cyst, Early cyst No DGE
+6 Tsp29Fb gene-9729 -0.0171158892980015 1 Chr_X UNBIAS_CNV Late cyst No DGE
+7 santa-maria gene-9485 0.150832317167978 0.110773441089175 Chr_X UNBIAS_CNV Early cyst, Secondary spermatocytes No DGE

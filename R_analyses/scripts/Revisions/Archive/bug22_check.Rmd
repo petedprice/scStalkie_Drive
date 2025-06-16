@@ -1,0 +1,140 @@
+---
+title: "bug22_check"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/scStalkie_Drive/R_analyses")
+```
+
+```{r data}
+
+library(dplyr)
+library(Seurat)
+library(openxlsx)
+library(ggpubr)
+library(scuttle)
+library(edgeR)
+library(statmod)
+library(scran)
+library(ggpubr)
+library(gridExtra)
+library(tidyverse)
+library(data.table)
+library(clusterProfiler)
+library(ggrepel)
+library(GenomicFeatures)
+library(ggrepel)
+library(cowplot)
+rm(list = ls())
+
+#### LOAD DATA AND PREP DATA ---
+list.files()
+load("data/RData/seurat_final.RData")
+load("data/RData/DEG_DC.RData")
+
+
+seurat_final <- JoinLayers(seurat_final)
+Idents(seurat_final) <- "celltype"
+levels(seurat_final) <- c("Muscle", "Early cyst", "Late cyst", 
+                          "GSC/Spermatogonia", "Primary spermatocytes", 
+                          "Secondary spermatocytes", "Early spermatids", "Late spermatids")
+seurat_final@meta.data <- seurat_final@meta.data %>%  
+  mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
+                                                "Late cyst", "GSC/Spermatogonia", 
+                                                "Primary spermatocytes", "Secondary spermatocytes", 
+                                                "Early spermatids", "Late spermatids")))
+
+DefaultAssay(seurat_final) <- "RNA"
+
+ortholog_table <- read.table("outdata/orthologs_April25.tsv", sep = '\t', header = T, 
+                             stringsAsFactors = F, quote = "", comment.char = "")
+
+
+ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
+  ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
+```
+
+
+
+
+```{bash}
+#mkdir data/revisions_check_Y
+
+source activate blast
+ls data/ref_files/Bug22.fasta
+#makeblastdb -in data/revisions_check_Y/Teleopsis_dalmanni.cds_longest.fna -dbtype nucl -out data/revisions_check_Y/Tdal_cds_db
+blastn \
+  -db data/revisions_check_Y/ST_FINAL \
+  -query data/ref_files/Bug22.fasta  \
+  -out data/revisions_check_Y/Bug22.out \
+        -outfmt 6
+
+conda deactivate 
+
+```
+
+
+```{r}
+Bug_blast <- read.table("data/revisions_check_Y/Bug22.out", sep = "\t", header = F)
+colnames(Bug_blast) <- c("query_id", "subject_id", "identity", "length", "mismatch", 
+                      "gapopen", "q.start", "q.end", "s.start", "s.end", 
+                      "evalue", "bitscore")
+get_name_func <- function(x){
+  str_split(x, " ")[[1]][1:2] %>% gsub(">", "", .) %>% 
+    gsub("gene=", "", .)
+}  
+gene_names <- readLines("data/var_rates/Teleopsis_dalmanni.cds_longest.fna") %>% 
+  .[grepl(">", .)] %>% 
+  lapply(., get_name_func) %>% 
+  do.call(rbind, .) %>% as.data.frame() %>% 
+  dplyr::rename(longest_transcript = V1, genes = V2)
+
+Bug_blast <- filter(Bug_blast) %>% #, evalue <= 1e-5) %>% 
+  group_by(query_id) %>% 
+#  slice_max(evalue, n = 1) %>% 
+  merge(gene_names, by.x = 'subject_id', by.y = 'longest_transcript') %>% 
+  merge(ortholog_table, by.x = 'genes', by.y = 'REF_GENE_NAME')
+  
+  
+dim(Bug_blast)
+View(Bug_blast)
+
+x <- Bug_blast[1,]
+
+ot <- ortholog_table
+
+get_gene_func <- function(x, ot = ortholog_table){
+  st = x[9]
+  nd = x[10]
+  
+  if (st > nd){
+    st = x[10]
+    nd = x[9]
+  }
+  
+  out <- filter(ot, #chr == x[2] & 
+                  ((start >= st & start <= nd) | 
+                     (end >= st & end <= nd) | 
+                     (start <= st & end >= nd) | 
+                     (start >= st & end <= nd)
+                  ) )
+  
+  if(nrow(out)>=1){
+    out$Y_contig <- x[1]
+    return(out)
+  } else {
+    return(NULL)
+  }
+}
+
+genes <- apply(Bug_blast, 1, get_gene_func) %>% 
+  do.call(rbind, .)
+View(genes)
+
+```
+
+
+
+
+

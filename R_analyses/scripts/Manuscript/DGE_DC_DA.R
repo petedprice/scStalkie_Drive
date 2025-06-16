@@ -23,12 +23,14 @@ load("data/RData/seurat_final.RData")
 DefaultAssay(seurat_final) <- "RNA"
 seurat_final$treatment <- "SR"
 seurat_final$treatment[grep("st", seurat_final$sample)] <- "ST"
-ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
+ortholog_table <- read.table("outdata/orthologs_April25.tsv", sep = '\t', header = T, 
+                             stringsAsFactors = F, quote = "", comment.char = "")
+
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
 ortholog_table <- ortholog_table %>% group_by(REF_GENE_NAME, OF_DMEL, 
                                               FBgnOF, OMA_REFGENE, chr, OMA_CG, 
-                                              OMA_DMEL, consensus_gene) %>% 
+                                              OMA_DMEL, consensus_gene, FBconcensus) %>% 
   summarise(start = min(start), end = max(end))
 ortholog_table$REF_GENE_NAME <- gsub("_", "-", ortholog_table$REF_GENE_NAME)
 
@@ -40,6 +42,8 @@ Agenes <- filter(ortholog_table, chr %in% c("Chr_1", "Chr_2"))$REF_GENE_NAME %>%
   intersect(rownames(seurat_final))%>% unique()
 
 seurat_final <- JoinLayers(seurat_final)
+
+
 sce <- seurat_final %>% as.SingleCellExperiment(assay = "RNA")
 
 ################################################################################
@@ -73,7 +77,7 @@ PBDGE <- function(label, sce, func = 'custom', seurat_obj = seurat_final, consis
   design <- model.matrix(~treatment, y$samples)
   y <- normLibSizes(y)
   y <- estimateDisp(y, design)
-  cpm <- cpm(y, log = F)
+  cpm <- edgeR::cpm(y, log = F)
   if (func == "custom"){
     keep1 <- cpm[,y$samples$treatment== "ST"] >= 1
     keep1 <- rowSums(keep1) > (ncol(keep1)/2)
@@ -92,8 +96,8 @@ PBDGE <- function(label, sce, func = 'custom', seurat_obj = seurat_final, consis
   res <- glmQLFTest(fit, coef=ncol(design))
   out <- list()
   out$res <- res
-  out$logcpm <- cpm(y, log = T, prior.count = .0001)
-  out$cpm <- cpm(y, log = F)
+  out$logcpm <- edgeR::cpm(y, log = T, prior.count = .0001)
+  out$cpm <- edgeR::cpm(y, log = F)
   out$toptags <- topTags(res, n = nrow(res))
   out$exacttest <- topTags(STSR, n = nrow(STSR))
   out$func <- func
@@ -164,7 +168,7 @@ dif_exp_data <- lapply(names(de.results_act_edger), get_DGE_data, x = de.results
   bind_rows() %>% 
   mutate(Significant = ifelse(.$logFC > 1 & .$FDR < 0.05, "ST-biased",
                                                               ifelse(.$logFC < -1 & .$FDR < 0.05, "SR-biased", "Unbiased"))) %>% 
-  merge(ortholog_table, by.x = 'genes', by.y = 'REF_GENE_NAME')
+  merge(ortholog_table, by.x = 'genes', by.y = 'REF_GENE_NAME', all = T)
 save(XA, tidy_cpm_edger, dif_exp_data, de.results_act_edger, file = "data/RData/DEG_DC.RData")
 
 dif_exp_data_table <-  dif_exp_data %>% 
@@ -270,12 +274,22 @@ dif_exp_data_table %>%
 ################# INVERSION CHECK --------------
 DGE_inversion <- dif_exp_data
 
-inversions <- data.frame(inversions = c("inv1", "inv2", "inv3", "inv4", "inv5"),
-                         starts = c(76.7, 80.2, 59,32,1.2), 
+new_inversions <- data.frame(inversions = c("Tdal_INV0", "Tdal_INV1", "Tdal_INV2", "Tdal_INV3", "Tdal_INV_TLOC"), 
+                         start = c(0, 398747, 32269986, 59107670, 76695356), 
+                         end = c(398747, 9036332, 48326019, 87076097, 80442481), 
+                         start2 = c(17545, 1252862, 32269991, 59117787, 76695380), 
+                         end2 = c(1252862, 11084918, 48326025, 87076515, 80443921)) %>% 
+  mutate(start_uncert = start2-start, 
+         end_uncert = end2-end) %>%
+  print()
+
+old_inversions <- data.frame(inversions = c("inv1", "inv2", "inv3", "inv4", "inv5"),
+                         starts = c(76.7, 80.2, 59,32,0), 
                          ends = c(80.4, 87.07, 76.7, 46.3, 9.03)) %>% 
   mutate(starts = starts * 1e6, 
          ends = ends * 1e6)
 
+inversions <- new_inversions
 inv_func <- function(x, inversions){
   if (x[12] == "Chr_X"){
     st <- inversions[,1][which(inversions[,2] < as.numeric(x[16]) & inversions[,3] > 
@@ -293,6 +307,12 @@ inv_func <- function(x, inversions){
 
 
 DGE_inversion$inversion <- apply(DGE_inversion, 1, inv_func, inversions = inversions) %>% unlist()
+
+DGE_inversion %>% 
+  filter(chr == "Chr_X") %>%
+  ggplot(aes(x = start, y = abs(logFC), colour = inversion, fill = inversion)) + 
+  geom_point()
+
 chisq_inv_table <- DGE_inversion %>% filter(chr == "Chr_X") %>% 
   group_by(inversion, Significant, celltype) %>% 
   summarise(count = n()) %>% 
@@ -319,7 +339,8 @@ model_inv <- DGE_inversion %>%
                                                 "Primary spermatocytes", "Secondary spermatocytes", 
                                                 "Spermatids"))) %>%
   glm(Significant ~celltype + inversion, family = binomial, data = .)
-
+summary(model_inv)
 summary(model_inv)$coefficients %>% 
   write.table("data/DEG_model_inv_coefficients.tsv", sep = "\t", quote = F, row.names = T)
 #There are no interesting results for enrichment of DGE inside/outside the inversion 
+

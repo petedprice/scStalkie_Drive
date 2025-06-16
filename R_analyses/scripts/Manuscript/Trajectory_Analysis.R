@@ -26,7 +26,10 @@ seurat_final <- JoinLayers(seurat_final)
 Idents(seurat_final) <- seurat_final$celltype
 DefaultAssay(seurat_final) <- "RNA"
 
-ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
+ortholog_table <- read.table("outdata/orthologs_April25.tsv", sep = '\t', header = T, 
+                              stringsAsFactors = F, quote = "", comment.char = "")
+
+
 ortholog_table$REF_GENE_NAME <- gsub("_", "-", ortholog_table$REF_GENE_NAME)
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
@@ -100,7 +103,7 @@ assocRes <- rowData(sce_trad_filt1)$assocRes
 assocRes$ST_padj <- p.adjust(assocRes$pvalue_lineage1_conditionST, "fdr")
 assocRes$SR_padj <- p.adjust(assocRes$pvalue_lineage1_conditionSR, "fdr")
 
-assocRes <- filter(assocRes, ST_padj < 0.001 | SR_padj < 0.001)
+assocRes <- filter(assocRes, ST_padj < 0.000001 | SR_padj < 0.000001)
 assocRes <- assocRes[is.na(assocRes$waldStat) == F,]
 dim(assocRes)
 sce_trad_filt2 <- sce_trad_filt1[rownames(assocRes),]
@@ -110,8 +113,13 @@ condRes <- conditionTest(sce_trad_filt2, l2fc = 1) %>%
   mutate(gene = rownames(.)) %>% 
   merge(ortholog_table, by.x = 'gene', by.y = 'REF_GENE_NAME', all.y = F) %>% 
   mutate(padj = p.adjust(pvalue, "fdr")) %>% 
-  filter(padj < 0.001 & !is.na(waldStat)) %>% 
+  filter(padj < 0.000001 & !is.na(waldStat))
+
+dim(condRes)
+
+condRes <- condRes %>% 
   top_n(., 500, waldStat)
+
 
 dim(condRes)
 condRes %>% 
@@ -122,9 +130,8 @@ condRes %>%
   dplyr::mutate(across(where(is.numeric), round, 4)) %>% 
   .[,c("Teleopsis dalmanni Gene", "Drosophila ortholog", "Chr", "waldStat", "df", 
        "pvalue", "FDR-adjusted p-value")] %>% 
-  
   write.table(., "data/MANUSCRIPT/differential_trajectories.tsv", sep = "\t", quote = F, row.names = F)
-
+system("open data/MANUSCRIPT/differential_trajectories.tsv")
 
 # GO term enrichment 
 
@@ -142,12 +149,14 @@ ego <- enrichGO(gene          = unique(GO_data$consensus_gene),
   as.data.frame()
 
 
+
 ego <- ego %>% 
   as.data.frame() %>% #round all numeric value to 3dp
   filter(pvalue < 0.05) %>% 
   dplyr::mutate(across(where(is.numeric), round, 4))
 
 View(ego)
+
 
 
 write.table(ego, "data/MANUSCRIPT/TRADESEQ_GO_terms.tsv", sep = "\t", quote = F, row.names = F)
@@ -192,8 +201,8 @@ gois <- DGE_DI$genes %>% unique()
 plots <- lapply(gois, Smoother_func, sce_trad = sce_trad)
 arranged <- ggarrange(plotlist = plots, ncol =4, nrow = 5, common.legend = T)
 arranged <- annotate_figure(arranged, bottom = text_grob("Pseudotime", size = 14, vjust = -0.5), left = text_grob("log(expression + 1)", , size = 14, rot = 90, vjust = 1))
-ggsave("plots/S11_TRADESEQ2_top20_genes.pdf", arranged, width = 15, height = 12)
-system("open plots/S11_TRADESEQ2_top20_genes.pdf")
+ggsave("plots/manuscript_plots/S11.tiff", arranged, width = 15, height = 12)
+system("open plots/manuscript_plots/S11.tiff")
 
 
 ################################################################################

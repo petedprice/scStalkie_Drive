@@ -20,13 +20,13 @@ if (run_checks == "yes"){
   #samp = samples[1]
   for (samp in samples){  
     print(samp)
-    snps <- read.table(paste0("data/scAlleleCount/relaxed/data/", samp, "_filt.recode.bed"))
+    snps <- read.table(paste0("data/scAlleleCount/relaxed/send/", samp, "_filt.recode.bed"))
     snps$snp_indx <- 1:nrow(snps)
     colnames(snps) <- c("Chr", "Pos", "Ref", "Alt", "snp_indx")
-    barcodes <- read.table(paste0("data/scAlleleCount/relaxed///data/", samp, "_barcodes.tsv"))[,1]
-    cov <- readMM(file = paste0("data/scAlleleCount/relaxed///data/", samp, "covmat.mtx"))
-    alt <- readMM(file = paste0("data/scAlleleCount/relaxed//data/", samp, "altmat.mtx"))
-    ref <- readMM(file = paste0("data/scAlleleCount/relaxed//data/", samp, "refmat.mtx"))
+    barcodes <- read.table(paste0("data/scAlleleCount/relaxed/send/", samp, "_barcodes.tsv"))[,1]
+    cov <- readMM(file = paste0("data/scAlleleCount/relaxed///send/", samp, "covmat.mtx"))
+    alt <- readMM(file = paste0("data/scAlleleCount/relaxed//send/", samp, "altmat.mtx"))
+    ref <- readMM(file = paste0("data/scAlleleCount/relaxed//send/", samp, "refmat.mtx"))
     
     #subsetting matrices for cells we have present in our seurat object
     cells <- match(paste0(samp, "_", barcodes), rownames(seurat_final@meta.data))
@@ -194,8 +194,8 @@ ac <- plot_grid(ab[[1]],cd[[1]], labels = c("(a)", "(c)"), align = 'v',
                 axis = 'r', ncol = 1, label_x = -0.03, rel_heights = c(4,5))
 Ploidy_Sup <- plot_grid(ac, bd, rel_widths = c(4,4))
 
-ggsave("plots/Ploidy_Sup.svg", Ploidy_Sup, width = 8, height = 9)
-system("open plots/Ploidy_Sup.svg")
+ggsave("plots/manuscript_plots/S14.pdf", Ploidy_Sup, width = 8, height = 9)
+system("open plots/manuscript_plots/S14.pdf")
 
 ############################
 new_meta_data %>% 

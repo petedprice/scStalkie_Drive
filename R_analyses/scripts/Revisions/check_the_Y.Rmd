@@ -1,0 +1,232 @@
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "/Users/peter/Documents/Science_Work/PhD/Projects/2022/Meiotic_drive_2022/scStalkie_Drive/R_analyses")
+```
+
+```{r data}
+
+library(dplyr)
+library(Seurat)
+library(openxlsx)
+library(ggpubr)
+library(scuttle)
+library(edgeR)
+library(statmod)
+library(scran)
+library(ggpubr)
+library(gridExtra)
+library(tidyverse)
+library(data.table)
+library(clusterProfiler)
+library(ggrepel)
+library(GenomicFeatures)
+library(ggrepel)
+library(cowplot)
+rm(list = ls())
+
+#### LOAD DATA AND PREP DATA ---
+list.files()
+#load("data/RData/seurat_final.RData")
+load("data/RData/DEG_DC.RData")
+
+
+#seurat_final <- JoinLayers(seurat_final)
+#Idents(seurat_final) <- "celltype"
+# levels(seurat_final) <- c("Muscle", "Early cyst", "Late cyst", 
+#                           "GSC/Spermatogonia", "Primary spermatocytes", 
+#                           "Secondary spermatocytes", "Early spermatids", "Late spermatids")
+# seurat_final@meta.data <- seurat_final@meta.data %>%  
+#   mutate(celltype = factor(celltype, levels = c("Muscle", "Early cyst", 
+#                                                 "Late cyst", "GSC/Spermatogonia", 
+#                                                 "Primary spermatocytes", "Secondary spermatocytes", 
+#                                                 "Early spermatids", "Late spermatids")))
+# 
+# DefaultAssay(seurat_final) <- "RNA"
+
+ortholog_table <- read.table("outdata/orthologs_April25.tsv", sep = '\t', header = T, 
+                             stringsAsFactors = F, quote = "", comment.char = "")
+
+
+ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
+  ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
+
+get_name_func <- function(x){
+  str_split(x, " ")[[1]][1:2] %>% gsub(">", "", .) %>% 
+    gsub("gene=", "", .)
+}  
+gene_names <- readLines("data/var_rates/Teleopsis_dalmanni.cds_longest.fna") %>% 
+  .[grepl(">", .)] %>% 
+  lapply(., get_name_func) %>% 
+  do.call(rbind, .) %>% as.data.frame() %>% 
+  dplyr::rename(longest_transcript = V1, genes = V2)
+
+get_name_func2 <- function(x){
+  tmp <- str_split(x, " ")[[1]][c(1,3)] %>% gsub(">", "", .) %>% 
+    gsub("name=", "", .) 
+  tmp[2] <- strsplit(tmp[2], ":")[[1]][1]
+  return(tmp)
+    
+}  
+
+gene_names_dros <- readLines("data/revisions_check_Y/Drosophila_melanogaster.cds_longest.fna") %>% 
+  .[grepl(">", .)] %>% 
+  lapply(., get_name_func2) %>% 
+  do.call(rbind, .) %>% as.data.frame() %>% 
+  dplyr::rename(longest_transcript = V1, genes = V2)
+
+```
+
+
+
+
+```{bash}
+#mkdir data/revisions_check_Y
+
+source activate blast
+
+makeblastdb -in data/revisions_check_Y/Teleopsis_dalmanni.cds_longest.fna -dbtype nucl -out data/revisions_check_Y/Tdal_cds_db
+makeblastdb -in data/revisions_check_Y/Baker_Y_genes.fasta -dbtype nucl -out data/revisions_check_Y/Baker_Y_genes_db 
+makeblastdb -in data/revisions_check_Y/Mahajan_Y_genes.fasta -dbtype nucl -out data/revisions_check_Y/Mahajan_Y_genes_db
+
+
+blastn \
+  -db data/revisions_check_Y/Tdal_cds_db \
+  -query data/revisions_check_Y/Baker_Y_genes.fasta  \
+  -out data/revisions_check_Y/cds_to_Baker_Y.txt \
+       -outfmt 0
+
+echo dog2
+
+blastn -db data/revisions_check_Y/Tdal_cds_db \
+  -query data/revisions_check_Y/Mahajan_Y_genes.fasta \
+  -out data/revisions_check_Y/cds_to_Mahajan_Y.txt \
+       -evalue 1e-5 -outfmt 6
+
+blastn \
+  -db data/revisions_check_Y/Baker_Y_genes_db \
+  -query data/revisions_check_Y/Teleopsis_dalmanni.cds_longest.fna \
+  -out data/revisions_check_Y/Baker_Y_to_cds.txt \
+       -evalue 1e-5 -outfmt 6
+
+blastn \
+  -db data/revisions_check_Y/Mahajan_Y_genes_db \
+  -query data/revisions_check_Y/Teleopsis_dalmanni.cds_longest.fna \
+  -out data/revisions_check_Y/Mahajan_Y_to_cds.txt \
+       -evalue 1e-5 -outfmt 6
+
+
+blastn -db data/revisions_check_Y/Mahajan_Y_genes_db \
+  -query data/revisions_check_Y/Baker_Y_genes.fasta  \
+  -out data/revisions_check_Y/Baker_Y_to_Mahajan_Y.txt \
+       -evalue 1e-5 -outfmt 6
+       
+blastn -db data/revisions_check_Y/Baker_Y_genes_db \
+  -query data/revisions_check_Y/Mahajan_Y_genes.fasta \
+  -out data/revisions_check_Y/Mahajan_Y_to_Baker_Y.txt \
+       -evalue 1e-5 -outfmt 6
+
+conda deactivate 
+
+```
+
+
+```{r}
+cds_to_Y <- read.table("data/revisions_check_Y/Mahajan_Y_to_cds.txt", sep = "\t", header = F)
+colnames(cds_to_Y) <- c("query_id", "subject_id", "identity", "length", "mismatch", 
+                      "gapopen", "q.start", "q.end", "s.start", "s.end", 
+                      "evalue", "bitscore")
+Y_to_cds <- read.table("data/revisions_check_Y/cds_to_Mahajan_Y.txt", sep = "\t", header = F)
+colnames(Y_to_cds) <- c("query_id", "subject_id", "identity", "length", "mismatch", 
+                      "gapopen", "q.start", "q.end", "s.start", "s.end", 
+                      "evalue", "bitscore")
+
+
+cds_to_Y <- cds_to_Y %>% 
+  merge(gene_names, by.x = 'query_id', by.y = 'longest_transcript') %>%
+  merge(ortholog_table, by.x = 'genes', by.y = 'REF_GENE_NAME')
+
+Y_to_cds <- Y_to_cds %>% 
+  merge(gene_names, by.x = 'subject_id', by.y = 'longest_transcript') %>%
+  merge(ortholog_table, by.x = 'genes', by.y = 'REF_GENE_NAME')
+
+
+```
+
+```{r}
+library(readxl)
+sup3 <- readxl::read_excel('data/revisions_check_Y/S3_Dataset_rev.xlsx', sheet = 1)
+OF_results <- read.table("data/revisions_check_Y/N0.tsv", sep = "\t", header = T)
+
+colnames(sup3) <- sup3[1,]
+Y_genes <- filter(sup3, Chrm == "Y") %>% 
+  dplyr::select(Gene_ID) %>% c() %>% unlist() %>% 
+  .[grep("FB", .)]
+
+Y_genes <- data.frame( Y_candidate = c("FBgn0027512.1", "FBgn0030050.1", "FBgn0031545.1", "FBgn0031545.2", "FBgn0036141.1", "FBgn0037483.2", "FBgn0039008.1"), 
+                       name = c("CG10254", "CG12111", "CG3213", 'CG3213', 'wls', 'CG14609', 'CG6972'), 
+                       FB = c("FBgn0027512", "FBgn0030050", "FBgn0031545", "FBgn0031545", "FBgn0036141", "FBgn0037483", "FBgn0039008"))
+
+single_copy_Baker <- Y_genes %>% 
+  merge(ortholog_table, by.x = 'FB', by.y = 'FBconcensus') %>% 
+  dplyr::select(Y_candidate, REF_GENE_NAME, consensus_gene, chr, FB) %>% 
+  unique() %>% 
+  rename(Dros_gene_name = consensus_gene, 
+         Dalmanni_chromosome = chr, 
+         Dalmanni_gene = REF_GENE_NAME,
+         FBgn_name = FB) %>% 
+  unique() %>% 
+  mutate(source = "Baker")
+
+Y_trans <- gene_names_dros %>% 
+  filter(genes %in% Y_genes$name) %>% .$longest_transcript %>% 
+  paste(collapse = "|")
+
+OF_Y <- OF_results %>% 
+  filter(grepl(Y_trans, Drosophila_melanogaster.protein_longest)) %>% 
+  dplyr::select(OG, Drosophila_melanogaster.protein_longest, Teleopsis_dalmanni.protein_longest)
+
+#only multi copy is from rna-NM_001272412.1 which is CG12111
+#This family contains Drosophila: rna-NM_001014490.2 rna-NM_001272412.1
+#Dalmanni: rna-NM_001103675.2_R0, rna-NM_001258938.2_R0, rna-NM_001201916.1_R0
+
+multi_copy_baker_tmp <- OF_Y[1,]$Teleopsis_dalmanni.protein_longest %>% 
+  str_split(., ",") %>% .[[1]] %>% 
+  gsub(" ", "", .)
+
+multi_copy_baker <- gene_names[gene_names$longest_transcript %in% multi_copy_baker_tmp,] %>% 
+  merge(ortholog_table, by.x = 'genes', by.y = 'REF_GENE_NAME') %>% 
+    dplyr::select(genes, consensus_gene, chr, FBconcensus) %>% 
+  mutate(Y_candidate = 'FBgn0030050.1') %>% 
+  rename(Dros_gene_name = consensus_gene, 
+         Dalmanni_chromosome = chr, 
+         Dalmanni_gene = genes,
+         FBgn_name = FBconcensus) %>% 
+  unique() %>% 
+  mutate(source = "Baker_multicopy")
+
+ 
+Mahajan <- Y_to_cds %>% 
+  dplyr::select(genes, consensus_gene, chr, query_id) %>% 
+  merge(ortholog_table[,c("REF_GENE_NAME", "FBconcensus")], by.x = 'genes', by.y = 'REF_GENE_NAME') %>% 
+  mutate(source = "Mahajan") %>% 
+  rename(Dros_gene_name = consensus_gene, 
+         Dalmanni_chromosome = chr, 
+         Dalmanni_gene = genes,
+         Y_candidate = query_id, 
+         FBgn_name = FBconcensus)
+
+
+Y_genes_orthology <- rbind(single_copy_Baker, 
+                            multi_copy_baker, 
+                            Mahajan)
+row.names(Y_genes_orthology) <- NULL
+
+
+write.table(Y_genes_orthology, "data/revisions_check_Y/Y_genes_orthology.txt", sep = "\t", 
+            quote = F, row.names = F)
+
+
+```
+
+
+
+

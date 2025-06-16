@@ -8,7 +8,9 @@ rm(list = ls())
 load("data/RData/DEG_DC.RData")
 
 #ortholog table loading and name changing
-ortholog_table <- read.csv("outdata/orthologs_Jan24.csv")
+ortholog_table <- read.table("outdata/orthologs_April25.tsv", sep = '\t', header = T, 
+                             stringsAsFactors = F, quote = "", comment.char = "")
+
 ortholog_table$consensus_gene[is.na(ortholog_table$consensus_gene)] = 
   ortholog_table$REF_GENE_NAME[is.na(ortholog_table$consensus_gene)]
 ortholog_table$REF_GENE_NAME<- gsub("gene_", "gene-", ortholog_table$REF_GENE_NAME)
@@ -80,6 +82,9 @@ tau_final <- ortho_XA %>%
   merge(tau_data_cndsd, 
         by.x = 'FBconcensus', by.y = 'FBID', all.x = T) %>% 
   unique()
+
+tau_final <- tau_final %>% 
+  mutate(ts = ifelse(ts == "Testes", "Testis", ts))
 
 
 tau_final %>% 

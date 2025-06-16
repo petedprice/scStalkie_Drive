@@ -10,18 +10,22 @@ best_hits_ab <- blast_ab %>%
   arrange(evalue, desc(bitscore)) %>%
   slice(1) %>%
   ungroup()
+
 best_hits_ba <- blast_ba %>%
   group_by(query_b) %>%
   arrange(evalue, desc(bitscore)) %>%
   slice(1) %>%
   ungroup()
 
-Y_candidates <- blast_ba$subject_a %>% 
-  gsub("_", "-", .)
+Y_candidatesa <- blast_ba$subject_a #%>% 
+Y_candidatesb <- blast_ab$query_a 
+#  gsub("_", "-", .)
+
+filter(ortholog_table, REF_GENE_NAME %in% Y_candidates)
 
 
-p1 <- DotPlot(seurat_integrated, features = Y_candidates)
-p2 <- DimPlot(seurat_integrated, label = T)
+p1 <- DotPlot(seurat_final, features = Y_candidates)
+p2 <- DimPlot(seurat_final, label = T)
 markers_plots <- ggarrange(p1, p2)
 markers_plots <- annotate_figure(markers_plots, top = text_grob("marker blast", 
                                       color = "red", face = "bold", size = 14))
@@ -49,10 +53,10 @@ Y_candidates <- best_hits_ba$subject_a %>%
   gsub("_", "-", .)
 
 
-p1 <- DotPlot(seurat_integrated, features = Y_candidates) + 
+p1 <- DotPlot(seurat_final, features = Y_candidates) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels
 
-p2 <- DimPlot(seurat_integrated, label = T)
+p2 <- DimPlot(seurat_final, label = T)
 primer_plots <- ggarrange(p1, p2)
 primer_plots <- annotate_figure(primer_plots, top = text_grob("primer blast", 
                                                                 color = "red", face = "bold", size = 14))
@@ -107,15 +111,19 @@ writeLines(lengths$gtf, "data/Y_contigs/Y_genes.")
 
 
 load("data/RData/integrated_seurat_nf200_mtr0.20_gu0_newref_Seurat5.1_df0.08_Ycontigs.RData")
-DotPlot(seurat_integrated, 
-        features = lengths$gene, group.by = 'integrated_snn_res.0.4') + 
+DefaultAssay(seurat_integrated) <- "RNA"
+other_genes <- c("gene-6002")
+seurat_integrated$treatment <- "ST"
+seurat_integrated$treatment[grep("sr", seurat_integrated$sample)] <- "SR"
+p1 <- DotPlot(seurat_integrated, 
+        features = c(other_genes, lengths$gene), group.by = 'integrated_snn_res.0.4') + 
   coord_flip()
 
 
 seurat_integrated[['yexp']] <- PercentageFeatureSet(seurat_integrated, features = intersect(rownames(seurat_integrated), lengths$gene), assay = "RNA")
 
 
-p1 <- DotPlot(seurat_integrated, features = c('PB.4560', 'yexp', 'PB.1956', 'gene-6002'), group.by = 'integrated_snn_res.0.4', split.by = 'treatment')
+#p1 <- DotPlot(seurat_integrated, features = c('PB.4560', 'yexp', 'PB.1956', 'gene-6002'), group.by = 'integrated_snn_res.0.4', split.by = 'treatment')
 p2 <- DimPlot(seurat_integrated, group.by = 'integrated_snn_res.0.4', label = T, split.by = 'treatment')
 dev.off()
 ggarrange(p1,p2)

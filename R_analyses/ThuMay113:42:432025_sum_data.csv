@@ -1,0 +1,10 @@
+celltype,rep,treatment,chr,time,prop,sig,n
+GSCandSpermatogonia,rep1,STSR,Chr_1,Wed Apr 30 16:11:02 2025,0.97618161518422,non,2623
+GSCandSpermatogonia,rep1,STSR,Chr_1,Wed Apr 30 16:11:02 2025,0.00818756978042427,siga,22
+GSCandSpermatogonia,rep1,STSR,Chr_1,Wed Apr 30 16:11:02 2025,0.0156308150353554,sigb,42
+GSCandSpermatogonia,rep1,STSR,Chr_2,Wed Apr 30 16:11:02 2025,0.964607264824589,non,3107
+GSCandSpermatogonia,rep1,STSR,Chr_2,Wed Apr 30 16:11:02 2025,0.00993480285625582,siga,32
+GSCandSpermatogonia,rep1,STSR,Chr_2,Wed Apr 30 16:11:02 2025,0.0254579323191555,sigb,82
+GSCandSpermatogonia,rep1,STSR,Chr_X,Wed Apr 30 16:11:02 2025,0.929284525790349,non,1117
+GSCandSpermatogonia,rep1,STSR,Chr_X,Wed Apr 30 16:11:02 2025,0.0274542429284526,siga,33
+GSCandSpermatogonia,rep1,STSR,Chr_X,Wed Apr 30 16:11:02 2025,0.043261231281198,sigb,52
